@@ -104,7 +104,7 @@ def _get_screen_buffer(buffer, offset, page):
     return sub_arr
 
 
-def get_screen(tiles, offset, page):
+def get_screen(tiles, offset, page, display=False):
     """ Gets the current screen's tilemap from the tilemap buffer
     
     Args:
@@ -113,7 +113,8 @@ def get_screen(tiles, offset, page):
         page (int): current page number
     """
     grid = np.array(tiles).reshape((26, 16))
-    grid = np.char.ljust(grid.astype(str), width=3)
+    if display:
+        grid = np.char.ljust(grid.astype(str), width=3)
     grid = _splice_buffer(grid)
     grid = _get_screen_buffer(grid, offset, page)
 
