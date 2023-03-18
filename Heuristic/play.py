@@ -37,18 +37,18 @@ def get_floor_heights(col):
     return i
 
 
-def detect_obstacle(grid, by):
+def detect_obstacle(grid, player_row):
     """ Detect a platform (non floating) that is above Mario's current height
     
     Args:
         grid (np.array): (13, 16) numpy array representing the tilemap (contains tile hex strings)
-        by (int): the y coordinate of the tilemap that Mario currently occupies (the row in the tilemap grid)
+        player_row (int): the y coordinate of the tilemap that Mario currently occupies (the row in the tilemap grid)
     """
-    by = 13 - by
+    player_row = 13 - player_row
     obstacles = []
     for i, col in enumerate(grid.T):
         h = get_floor_heights(col)
-        if h >= by:
+        if h >= player_row:
             obstacles.append((i, h))
 
     return obstacles
@@ -66,7 +66,7 @@ def get_action(ram):
 
     # get player and enemy coordinates
     player, enemies = utils.get_sprite_points(ram)
-    bx, by = utils.bucket_sprite(player)
+    player_col, player_row = utils.bucket_sprite(player)
 
     # get tilemap grid
     page = ram[1818]
@@ -82,7 +82,7 @@ def get_action(ram):
     x_pits = find_pits(grid)
 
     if len(x_pits) > 0:
-        dist = x_pits[0] - bx
+        dist = x_pits[0] - player_col
         if -1 <= dist < 2:
             return 20
 
@@ -97,11 +97,11 @@ def get_action(ram):
             return 6
 
     # jump over obstacles
-    obstacles = detect_obstacle(grid, by)
+    obstacles = detect_obstacle(grid, player_row)
 
     if len(obstacles) > 0:
         for ob in obstacles:
-            dist = ob[0] - bx
+            dist = ob[0] - player_col
             if 0 < dist < 4:
                 return 20 
 
