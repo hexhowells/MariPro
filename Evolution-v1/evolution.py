@@ -78,13 +78,39 @@ class Evolution:
         self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
 
 
+    def select_offspring(self):
+        """ Select offspring from the surviving parents
+            Offspring can then be modified using crossover or mutation
+        """
+        probs = np.asarray(self.fitness_scores) / sum(self.fitness_scores)
+
+        # determine how many chromosomes to create
+        original_pop_size = len(self.population) / self.survival_rate
+        size = int( original_pop_size - len(self.population) )
+
+        offspring_indexes = np.random.choice(range(len(self.population)), size=size, p=probs)
+
+        offspring, fitness = [], []
+
+        for idx in offspring_indexes:
+            offspring.append(self.population[idx].copy())
+            fitness.append(self.fitness_scores[idx])
+
+        return offspring, fitness
+
+
     def simulate_generation(self):
         """ Simulate an entire generation
         """
         self.evaluate_population()
         self.selection(self)
-        if self.crossover: self.crossover(self)
-        self.mutation(self)
+
+        if self.crossover: 
+            offspring, fitness = self.crossover(self)
+        else:
+            offspring, fitness = self.select_offspring()
+
+        self.mutation(self, offspring, fitness)
         
 
     def play_actions(self, actions):
