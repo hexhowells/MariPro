@@ -3,22 +3,15 @@ import random
 
 
 
-def uniform_mutation(evo):
+def uniform_mutation(evo, chromosomes, fitness_scores):
     """ Uniform mutation - mutates random genes uniformly
 
         Args:
             evo (Evolution): Evolution class instance
+            chromosomes (list): chromosomes to mutate
+            fitness_scores (list): fitness scores of the chromosomes
     """
-    probs = np.asarray(evo.fitness_scores) / sum(evo.fitness_scores)
-
-    # determine how many chromosomes to mutate
-    original_pop_size = len(evo.population) / evo.survival_rate
-    size = int( original_pop_size - len(evo.population) )
-
-    chromosomes_to_mutate = np.random.choice(range(len(evo.population)), size=size, p=probs)
-
-    for idx in chromosomes_to_mutate:
-        chromosome = evo.population[idx].copy()
+    for chromosome in chromosomes:
         number_of_mutations = int(evo.chromosome_length * evo.mutation_rate)
         mutations = [random.randint(0, evo.gene_length-1) for _ in range(number_of_mutations)]
 
@@ -31,26 +24,19 @@ def uniform_mutation(evo):
         evo.fitness_scores.append(0)
 
 
-def local_mutation(evo, spread_rate=0.1):
+def local_mutation(evo, chromosomes, fitness_scores, spread_rate=0.1):
     """ Local mutation - only mutate the genes near where the agent stopped
 
         Args:
             evo (Evolution): Evolution class instance
+            chromosomes (list): chromosomes to mutate
+            fitness_scores (list): fitness scores of the chromosomes
             spread_rate (float): percentage of genes away from agent stop point to potentially mutate
     """
-    probs = np.asarray(evo.fitness_scores) / sum(evo.fitness_scores)
-
     spread = int(evo.chromosome_length * spread_rate)
 
-    # determine how many chromosomes to mutate
-    original_pop_size = len(evo.population) / evo.survival_rate
-    size = int( original_pop_size - len(evo.population) )
-
-    chromosomes_to_mutate = np.random.choice(range(len(evo.population)), size=size, p=probs)
-
-    for idx in chromosomes_to_mutate:
-        chromosome = evo.population[idx].copy()
-        steps = evo.fitness_scores[idx] // 5
+    for chromosome, fitness_score in zip(chromosomes, fitness_scores):
+        steps = fitness_score // 5
 
         number_of_mutations = int(2 * spread * evo.mutation_rate)
         mutations = [random.randint(0, evo.gene_length-1) for _ in range(number_of_mutations)]
@@ -80,32 +66,25 @@ def _create_gaussian(size, n, sigma):
     return prob_distribution / np.sum(prob_distribution)
 
 
-def weighted_mutation(evo, sigma=125):
+def weighted_mutation(evo, chromosomes, fitness_scores, sigma=125):
     """ Weighted mutation - genes nearest where the agent stopped have a higher probability of being mutated
             Creates a gaussian distribution from the step where the agent stopped to sample from
 
         Args:
             evo (Evolution): Evolution class instance
+            chromosomes (list): chromosomes to mutate
+            fitness_scores (list): fitness scores of the chromosomes
             sigma (sigma): standard deviation for the gaussian
     """
-    probs = np.asarray(evo.fitness_scores) / sum(evo.fitness_scores)
-
-    # determine how many chromosomes to mutate
-    original_pop_size = len(evo.population) / evo.survival_rate
-    size = int( original_pop_size - len(evo.population) )
-
-    chromosomes_to_mutate = np.random.choice(range(len(evo.population)), size=size, p=probs)
-
-    for idx in chromosomes_to_mutate:
-        chromosome = evo.population[idx].copy()
+    for chromosome, fitness_score in zip(chromosomes, fitness_scores):
         number_of_mutations = int(evo.chromosome_length * evo.mutation_rate)
         mutations = [random.randint(0, evo.gene_length-1) for _ in range(number_of_mutations)]
 
         # create gaussian distribution centered where the agent terminated
-        steps = evo.fitness_scores[idx] // 5
+        steps = fitness_score // 5
 
         gaussian = _create_gaussian(evo.chromosome_length, steps, sigma=sigma)
-        genes_to_mutate = np.random.choice(range(evo.chromosome_length), size=size, p=gaussian)
+        genes_to_mutate = np.random.choice(range(evo.chromosome_length), size=number_of_mutations, p=gaussian)
 
         for gene, mutation in zip(genes_to_mutate, mutations):
             chromosome[gene] = mutation
