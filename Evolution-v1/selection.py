@@ -1,4 +1,6 @@
 import numpy as np
+import math
+import random
 
 
 def _sort_population(evo):
@@ -58,26 +60,53 @@ def elitist_selection(evo, topk=3):
 	evo.fitness_scores = top_fitness_scores + [fitness_scores[i] for i in indexes]
 
 
-def rank_selection(evo):
-	""" Rank selection function
+def linear_rank_selection(evo, sp=1.9):
+	""" Linear rank selection function
 
 		Args:
 			evo (Evolution): Evolution class instance
+			sp (float): selection pressure (1.0 = no selection pressure, 2.0 = high selection pressure)
 	"""
-	pass
+	population, fitness_scores = _sort_population(evo)
+	probs = []
+	n = len(evo.population)
 
-	# sort the population accoring to the fitness scores
-	# assign probabilities based on their rank
-	# methods
-	#   1. use their position and create a prob distribution
-	#
-	#   2. use the equation P(i) = (C - c * (i - 1)) / N (linear ranking)
-	#       C = normalisation constant
-	#       c = selection pressure
-	#       N = population size
-	#       i = rank index
-	#
-	#   3. P(i) = (1 - exp(-c * i)) / (1 - exp(-c * N)) (exponential ranking)
+	#probs = [1/n * (sp - (2 * sp - 2) * ((i-1) / (n-1))) for i in range(1, n+1)]
+
+	for i in range(1, n+1):
+		p = 1/n * (sp - (2 * sp - 2) * ((i-1) / (n-1)))
+		probs.append(p)
+
+	survivor_size = int(n * evo.survival_rate)
+	indexes = np.random.choice(range(n), size=survivor_size, replace=False, p=probs)
+
+	evo.population = [evo.population[i] for i in indexes]
+	evo.fitness_scores = [evo.fitness_scores[i] for i in indexes]
+
+
+def exponential_rank_selection(evo, sp=1.9):
+	""" Exponential rank selection function
+
+		Args:
+			evo (Evolution): Evolution class instance
+			sp (float): selection pressure (1.0 = no selection pressure, 2.0 = high selection pressure)
+	"""
+	population, fitness_scores = _sort_population(evo)
+	probs = []
+	n = len(evo.population)
+
+	for i in range(1, n+1):
+		#p = (1 - math.exp(-sp * i)) / (1 - math.exp(-sp * n))
+		p = ((sp - 1) / (sp**n - 1)) * sp**(n-i)
+		#p = (1 - math.exp(-i)) / sp
+		#p = math.exp(-sp * i) / n
+		probs.append(p)
+
+	survivor_size = int(n * evo.survival_rate)
+	indexes = np.random.choice(range(n), size=survivor_size, replace=False, p=probs)
+
+	evo.population = [evo.population[i] for i in indexes]
+	evo.fitness_scores = [evo.fitness_scores[i] for i in indexes]
 
 
 def tournament_selection(evo):
@@ -86,7 +115,29 @@ def tournament_selection(evo):
 		Args:
 			evo (Evolution): Evolution class instance
 	"""
-	pass
+	k = int(len(evo.population) * evo.survival_rate)
+	population = []
+	fitness_scores = []
+
+	# run tournament
+	for _ in range(k):
+		idx1, idx2 = random.choice(range(len(evo.population)), 2)
+		score1 = evo.fitness_scores[idx1]
+		score2 = evo.fitness_scores[idx2]
+		winner = None
+
+		if score1 > score2:
+			winner = idx1
+		elif score2 > score1:
+			winner = idx2
+		else:
+			winner = random.choice([idx1, idx2], 1)
+
+		population.append(evo.population.pop(winner))
+		fitness_scores.append(evo.fitness_scores.pop(winner))
+
+	evo.population = population
+	evo.fitness_scores = fitness_scores
 
 
 def truncation_selection(evo):
@@ -95,5 +146,8 @@ def truncation_selection(evo):
 		Args:
 			evo (Evolution): Evolution class instance
 	"""
-	pass
-	# select the top n individuals
+	population, fitness_scores = _sort_population(evo)
+	survivor_size = int(len(evo.population) * evo.survival_rate)
+
+	evo.population = population[:survivor_size]
+	evo.fitness_scores = fitness_scores[:survivor_size]
