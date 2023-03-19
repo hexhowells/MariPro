@@ -131,7 +131,7 @@ def tournament_selection(evo):
 		elif score2 > score1:
 			winner = idx2
 		else:
-			winner = random.sample([idx1, idx2], 1)
+			winner = random.sample([idx1, idx2], 1)[0]
 
 		population.append(evo.population.pop(winner))
 		fitness_scores.append(evo.fitness_scores.pop(winner))
