@@ -72,8 +72,8 @@ class Evolution:
         """
         population, fitness_scores = self.multi_envs.run(self.population)
 
-        self.population = population
-        self.fitness_scores = fitness_scores
+        self.population = list(population)
+        self.fitness_scores = list(fitness_scores)
 
         self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
 
