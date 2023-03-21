@@ -68,6 +68,7 @@ class MultiEnvironment():
 
         env.reset()
         fitness_score = int(max_dist - (step/10))  # reward travelling more distance in less steps
+        fitness_score = max(0, fitness_score)
         return (actions, fitness_score)
 
 
