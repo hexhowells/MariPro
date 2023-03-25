@@ -57,7 +57,7 @@ def main():
         if best_generation_fitness > best_fitness:
             best_fitness = best_generation_fitness
             model.show_best_performer()
-            torch.save(model.get_best_chromosome().state_dict, "model.pth")
+            torch.save(model.get_best_chromosome().state_dict(), "model.pth")
 
         #logs the performance metrics to wandb
         wandb.log({
