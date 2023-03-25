@@ -110,7 +110,7 @@ def get_action(ram):
 
 
 # setup environment
-_env = gym_super_mario_bros.make('SuperMarioBros-v0')
+_env = gym_super_mario_bros.make('SuperMarioBros-1-1-v0')
 env = JoypadSpace(_env, SIMPLE_MOVEMENT)
 
 # get the NES RAM
