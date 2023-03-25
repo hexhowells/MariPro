@@ -143,6 +143,12 @@ def bucket_sprite(point):
 
 
 def get_input_screen(ram):
+    """ Gets the tilemap of the screen with player and enemy tiles overlapped
+    
+    Args:
+        ram (list): 2Kb NES RAM
+    """
+
     # get tilemap grid
     page = ram[1818]
     offset = ram[1820]
