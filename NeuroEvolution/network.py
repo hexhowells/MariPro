@@ -33,10 +33,10 @@ class Model(nn.Module):
 
 
 class SimpleModel(nn.Module):
-	def __init__(self, in_size, out_size):
+	def __init__(self, dims):
 		super().__init__()
 
-		self.layer = nn.Linear(in_size, out_size)
+		self.layer = nn.Linear(dims[0], dims[1])
 		self.relu = nn.ReLU(inplace=True)
 
 	def forward(self, x):
