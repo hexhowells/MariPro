@@ -54,6 +54,7 @@ class Evolution:
         self.simulation_length = self.chromosome_length * 5
 
         self.model = model
+        self.dims = [self.input_length, 50, self.gene_length]
 
         self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
         self.multi_envs = MultiEnvironment(env_name, self)
@@ -71,7 +72,7 @@ class Evolution:
         """ Initialise the population with random chromosomes
         """
         for _ in range(self.initial_population_size):
-            chromosome = self.model([self.input_length, 100, self.gene_length])
+            chromosome = self.model(self.dims)
             self.population.append(chromosome)
 
 
