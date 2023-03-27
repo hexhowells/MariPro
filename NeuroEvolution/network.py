@@ -30,18 +30,3 @@ class Model(nn.Module):
 		x = self.layers(x)
 
 		return x
-
-
-class SimpleModel(nn.Module):
-	def __init__(self, dims):
-		super().__init__()
-
-		self.layer = nn.Linear(dims[0], dims[1])
-		self.activation = nn.ReLU(inplace=True)
-
-	def forward(self, x):
-		x = x.flatten()
-		x = self.layer(x)
-		x = self.activation(x)
-
-		return x
