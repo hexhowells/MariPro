@@ -7,12 +7,12 @@ class Layer(nn.Module):
 		super().__init__()
 
 		self.layer = nn.Linear(in_size, out_size)
-		self.relu = nn.ReLU(inplace=True)
+		self.activation = nn.ReLU(inplace=True)
 
 
 	def forward(self, x):
 		x = self.layer(x)
-		x = self.relu(x)
+		x = self.activation(x)
 
 		return x
 
@@ -37,11 +37,11 @@ class SimpleModel(nn.Module):
 		super().__init__()
 
 		self.layer = nn.Linear(dims[0], dims[1])
-		self.relu = nn.ReLU(inplace=True)
+		self.activation = nn.ReLU(inplace=True)
 
 	def forward(self, x):
 		x = x.flatten()
 		x = self.layer(x)
-		x = self.relu(x)
+		x = self.activation(x)
 
 		return x
