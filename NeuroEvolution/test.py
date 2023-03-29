@@ -24,7 +24,7 @@ def main():
 
     model = network.Model([evo.input_length, 100, 100, evo.gene_length])
     #model = network.Model(evo.dims)  # can just use this if the model architecture is the same in Evolution
-    model.load_state_dict(torch.load("data/model1.pth"))
+    model.load_state_dict(torch.load("model.pth"))
 
     evo.play_actions(model)
 
