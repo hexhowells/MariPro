@@ -3,6 +3,7 @@ import selection
 import crossover
 import mutation
 import network
+import hyperparameters as hp
 
 import wandb
 import torch
@@ -12,12 +13,16 @@ def main():
     # setup environment
     print("\nInitialising Environments...")
     model = Evolution(
-        population_size=100,
+        population_size=hp.population_size,
         selection=selection.elitist_selection,
-        crossover=None,#crossover.one_point_crossover,
-        mutation=mutation.uniform_mutation,
-        env_name='SuperMarioBros-1-1-v0',
-        model = network.Model
+        crossover=None,#crossover.layer_crossover,
+        mutation=mutation.random_mutation,
+        env_name=hp.env_name,
+        model = network.Model,
+        mutation_rate=hp.mutation_rate,
+        survival_rate=hp.survival_rate,
+        gene_length=hp.gene_length,
+        input_size=hp.input_size
         )
 
 
@@ -25,15 +30,14 @@ def main():
 
     # setup wandb (used for logging performance metrics)
     config = {
-        'population_size': 50,
-        'chromosome_length': 800,
-        'gene_length': 7,
-        'survival_rate':0.2, 
-        'mutation_rate': 0.05,
+        'population_size': hp.population_size,
+        'chromosome_length': hp.chromosome_length,
+        'gene_length': hp.gene_length,
+        'survival_rate': hp.survival_rate, 
+        'mutation_rate': hp.mutation_rate,
         'fitness': 'max_dist - (step/10)',
         'selection': 'elitist roulette wheel selection',
         'mutation': 'uniform mutation',
-        'spread_rate': 0.1,
         'crossover': 'None',
         'selection_pressure': 'None',
         'model': 'MLP'
@@ -42,7 +46,7 @@ def main():
 
     # hyperparameters
     best_fitness = 0
-    generations = 500
+    generations = 300
 
     # begin simulation
     for generation in range(generations):

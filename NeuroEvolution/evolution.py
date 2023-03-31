@@ -35,10 +35,10 @@ class Evolution:
             selection,
             mutation,
             model,
+            gene_length,
+            input_size,
             crossover=None,
-            env_name='SuperMarioBros-v0', 
-            input_size=(13, 16), 
-            gene_length=7, 
+            env_name='SuperMarioBros-v0',
             survival_rate=0.2, 
             mutation_rate=0.05,
             population_size=100
@@ -54,7 +54,7 @@ class Evolution:
         self.simulation_length = self.chromosome_length * 5
 
         self.model = model
-        self.dims = [self.input_length, 50, self.gene_length]
+        self.dims = [self.input_length, 100, 100, self.gene_length]
 
         self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
         self.multi_envs = MultiEnvironment(env_name, self)
