@@ -7,7 +7,7 @@ class Layer(nn.Module):
 		super().__init__()
 
 		self.layer = nn.Linear(in_size, out_size)
-		self.activation = nn.ReLU(inplace=True)
+		self.activation = nn.Tanh()
 
 
 	def forward(self, x):
