@@ -31,7 +31,7 @@ def main():
     # setup wandb (used for logging performance metrics)
     config = {
         'population_size': hp.population_size,
-        'chromosome_length': hp.chromosome_length,
+        'chromosome_length': model.chromosome_length,
         'gene_length': hp.gene_length,
         'survival_rate': hp.survival_rate, 
         'mutation_rate': hp.mutation_rate,
