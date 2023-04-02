@@ -30,3 +30,32 @@ class Model(nn.Module):
 		x = self.layers(x)
 
 		return x
+
+
+class ConvModel(nn.Module):
+	def __init__(self, dims):
+		super().__init__()
+
+		self.features = nn.Sequential(
+					nn.Conv2d(1, 4, kernel_size=2, bias=False),
+					nn.ReLU(inplace=True),
+					nn.Conv2d(4, 8, kernel_size=2, bias=False),
+					nn.ReLU(inplace=True)
+				)
+
+		self.linear = nn.Sequential(
+					nn.Linear(1232, 6),
+					nn.ReLU(inplace=True)
+				)
+		
+
+	def forward(self, x):
+		# add batch and channel dims
+		x = x.unsqueeze(0).unsqueeze(0)
+
+		x = self.features(x)
+
+		x = x.flatten()
+		x = self.linear(x)
+
+		return x
