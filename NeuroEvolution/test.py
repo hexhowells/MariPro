@@ -3,6 +3,7 @@ import selection
 import crossover
 import mutation
 import network
+import hyperparameters as hp
 
 import torch
 
@@ -18,7 +19,9 @@ def main():
         selection=selection.elitist_selection,
         mutation=mutation.uniform_mutation,
         env_name=f'SuperMarioBros-{world}-{level}-v0',
-        population_size=1
+        population_size=1,
+        gene_length=hp.gene_length,
+        input_size=hp.input_size
         
         )
 
