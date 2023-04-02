@@ -15,8 +15,8 @@ def main():
     model = Evolution(
         population_size=hp.population_size,
         selection=selection.elitist_selection,
-        crossover=None,#crossover.layer_crossover,
-        mutation=mutation.random_mutation,
+        crossover=None,
+        mutation=mutation.uniform_mutation,
         env_name=hp.env_name,
         model = network.Model,
         mutation_rate=hp.mutation_rate,
