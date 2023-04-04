@@ -3,6 +3,22 @@ Learning to play Super Mario Bros with AI
 
 Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) for emulating the game.
 
+---
+
+## Current Implemented Methods
+- Heuristic Based
+- Evolutionary Learning
+- Neuroevolution
+
+### TODO
+- NEAT
+- Immitation Learning
+- REINFORCE
+- Reinforcement Learning (DQN, DDQN, etc)
+- MuZero
+
+---
+
 ## Notable RAM Addresses
 | Addr | Description |
 | ---- | ----------- |
