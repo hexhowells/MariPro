@@ -31,3 +31,11 @@ Topology mutation can occur in two ways:
 #### Add node
 - Add a new node gene. 
 - Split a connection gene by disabling the connection and adding two new connections between the split nodes. the incoming weight is set to 1, the outgoing weight is set to the same as the old weight.
+
+## Speciation
+
+Since topological mutations typically decrease the networks fitness, time should be given to allow these networks time to adapt to their mutation. This is done through speciation.
+
+Speciation divdes the population into smaller species that only compete with other organisms within that species. A compatibility distance score is measured between each new organism and a random organism from each species in order to determine which species the new organism belongs to. A distance score that does not fit within the threshold of any species is placed in their own new species.
+
+
