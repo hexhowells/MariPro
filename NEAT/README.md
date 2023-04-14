@@ -38,4 +38,16 @@ Since topological mutations typically decrease the networks fitness, time should
 
 Speciation divdes the population into smaller species that only compete with other organisms within that species. A compatibility distance score is measured between each new organism and a random organism from each species in order to determine which species the new organism belongs to. A distance score that does not fit within the threshold of any species is placed in their own new species.
 
+The distance function is specified as follows:
+
+```math
+\large{\delta = \frac{c_1E}{N} + \frac{c_2D}{N}+c_3 \cdot \bar{W}}
+```
+
+- ```E``` - Number of Excess nodes
+- ```D``` - Number of Disjoint nodes
+- ```N``` - Number of genes in the larger genome
+- ```c's``` - Adjustable coefficients to set the importance of each factor
+- ```W``` - Average weight differences of matching genes
+
 
