@@ -50,4 +50,17 @@ The distance function is specified as follows:
 - ```c's``` - Adjustable coefficients to set the importance of each factor
 - ```W``` - Average weight differences of matching genes
 
+## Fitness Function
+
+Instead of using a normal fitness function specified by the developer, NEAT uses *explicit fitness sharing* where members of the same species share their fitness scores, this discourages species becoming too large and dominiating as the average fitness is likely to diminish with the increase of population size within a species. 
+
+The modified fitness function is as follows:
+
+```math
+\large{ f_i^{'} = \frac{f_i}{ \sum\limits_{j=1}^n sh(\delta(i,j)) } }
+```
+
+Where ```sh``` is the sharing function, this is set to 0 if the distance is above a threshold and 1 otherwise.
+
+This modified fitness function therefore scales an organism's fitness score (specified by the developer) by the number of organisms in the population that are similar to the organism being scored (More organisms that are similar, more the fitness gets penalised).
 
