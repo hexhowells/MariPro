@@ -6,6 +6,10 @@ NeuroEvolution of Augmenting Topologies (NEAT) expands on neuroevolution by addi
 
 ## Encoding
 
+<p align="center">
+  <img src="https://github.com/hexhowells/MariPro/blob/main/NEAT/images/genome.jpg" width=65%>
+</p>
+
 NEAT encodes the genome into two parts, Node Genes and Connect Genes. 
 
 Node Genes represent each node in the neural network and include metadata about the node index and position in the network (input, hidden, output).
@@ -17,6 +21,10 @@ Connect Genes represent the connections between nodes, metatdata specifies the f
 - innovation, value that keeps track of historical information about the gene, used for *artifical synapsis*
 
 ## Mutation
+
+<p align="center">
+  <img src="https://github.com/hexhowells/MariPro/blob/main/NEAT/images/mutation.jpg" width=60%>
+</p>
 
 Mutation can occur at both the weight connections and the network structure.
 
