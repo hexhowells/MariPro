@@ -119,15 +119,20 @@ class Genome:
 
 	def get_excess_nodes(self):
 		pass
+		# if connection exists in self but not in connections
+		# and if self.connection.innovation is above max innovation number in connections
+		# then connection is excess
 
 
-	def get_disjoint_nodes(self):
+	def get_disjoint_nodes(self, connections):
 		pass
+		# if connection exists in self but not in connections
+		# and if self.connection.innovation is below max innovation number in connections
+		# then connection is disjoint
 
 
-	def compute_distance_score(self):
+	def compute_distance_score(self, genome):
 		pass
-
-
-
-		
+		# get excess and disjoint nodes from self using genome.connections
+		# get avg weight difference between self.connections and genome.connections
+		# get max( len(self), len(genome) )
