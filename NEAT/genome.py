@@ -8,10 +8,12 @@ class NodeGene:
 		Args:
 			node_idx (int): index of the node
 			node_type (string): node type
+			ref (int): reference index to input or output array
 	"""
-	def __init__(self, node_idx, node_type):
+	def __init__(self, node_idx, node_type, ref=None):
 		self.idx = node_idx
 		self.type = node_type
+		self.ref = ref
 
 	def __str__(self):
 		return f'NodeGene {self.idx}, Type: {self.type}'
@@ -39,8 +41,26 @@ class Genome:
 	""" Class to represent the Genome
 	"""
 	def __init__(self):
-		self.node_genes = []
+		self.sensor_nodes = []
+		self.hidden_nodes = []
+		self.output_nodes = []
 		self.connect_genes = []
+		self.next_index = 0
+		self.innovation = 0
+
+
+	def __len__(self):
+		return len(sensor_nodes) + len(hidden_nodes) + len(output_nodes)
+
+
+	def get_next_index(self):
+		idx = self.next_index
+		self.next_index += 1
+		return idx
+
+
+	def get_node_genes(self):
+		return self.sensor_nodes + self.hidden_nodes + self.output_nodes
 
 
 	def initialise_nodes(self, n, max_sensor_idx, max_output_idx):
@@ -54,15 +74,60 @@ class Genome:
 		"""
 		# add output nodes
 		for i in range(max_output_idx):
-			out_node = NodeGene(i, types.OUTPUT)
-			self.node_genes.append(out_node)
+			out_node = NodeGene(self.get_next_index(), types.OUTPUT)
+			self.output_nodes.append(out_node)
 
 		# add random sensor nodes
 		random_indexes = random.sample(range(0, max_sensor_idx), n)
 
 		for idx in random_indexes:
-			sensor_node = NodeGene(idx, types.SENSOR)
-			self.node_genes.append(sensor_node)
+			sensor_node = NodeGene(self.get_next_index(), types.SENSOR)
+			self.sensor_nodes.append(sensor_node)
+
+
+	def initialise_connections(self, n):
+		""" Initialise the connection genes in the Genome
+			Will create random connections between existing genes
+
+			Args:
+				n (int): number of connections to create
+		"""
+		assert len(self) != 0, "Need to initialise the Node Genes before initialising the Connection Genes"
+
+		for _ in range(n):
+			pass
+
+
+	def forward(self, x):
+		pass
+		# x is the input array flattened
+		# 
+
+
+	def mutate_node(self):
+		pass
+		# pick a random connection from the gene pool
+		# add a new node and two new connections using the info from the old connection
+		# and conforming to the mutation rules (see paper)
+		# delete old connection?
+
+
+	def mutate_connection(self):
+		pass
+		# find two unconnected nodes, add a random connection between them
+
+
+	def get_excess_nodes(self):
+		pass
+
+
+	def get_disjoint_nodes(self):
+		pass
+
+
+	def compute_distance_score(self):
+		pass
+
 
 
 		
