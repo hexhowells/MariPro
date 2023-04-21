@@ -16,7 +16,8 @@ class NodeGene:
 		self.ref = ref
 
 	def __str__(self):
-		return f'NodeGene {self.idx}, Type: {self.type}'
+		ref_str = "Ref: "+str(self.ref) if self.ref is not None else ""
+		return f'NodeGene {self.idx}\tType: {self.type}\t{ref_str}'
 
 
 class ConnectGene:
@@ -41,16 +42,14 @@ class Genome:
 	""" Class to represent the Genome
 	"""
 	def __init__(self):
-		self.sensor_nodes = []
-		self.hidden_nodes = []
-		self.output_nodes = []
+		self.node_genes = []
 		self.connect_genes = []
 		self.next_index = 0
 		self.innovation = 0
 
 
 	def __len__(self):
-		return len(sensor_nodes) + len(hidden_nodes) + len(output_nodes)
+		return len(self.node_genes)
 
 
 	def get_next_index(self):
@@ -59,30 +58,22 @@ class Genome:
 		return idx
 
 
-	def get_node_genes(self):
-		return self.sensor_nodes + self.hidden_nodes + self.output_nodes
-
-
-	def initialise_nodes(self, n, max_sensor_idx, max_output_idx):
+	def initialise_nodes(self, sensor_num, output_num):
 		""" Initialise the node genes in the Genome
-			Will create nodes for all outputs but a random set of nodes for the inputs
+			Will create nodes for all output and input nodes possible
 
-			Args:
-				n (int): number of input nodes to create
-				max_sensor_idx (int): number of sensor nodes
-				max_output_idx (int): number of output nodes
+				sensor_num (int): number of sensor nodes
+				output_num (int): number of output nodes
 		"""
+		# add sensor nodes
+		for i in range(sensor_num):
+			sensor_node = NodeGene(self.get_next_index(), types.SENSOR, i)
+			self.node_genes.append(sensor_node)
+
 		# add output nodes
-		for i in range(max_output_idx):
-			out_node = NodeGene(self.get_next_index(), types.OUTPUT)
-			self.output_nodes.append(out_node)
-
-		# add random sensor nodes
-		random_indexes = random.sample(range(0, max_sensor_idx), n)
-
-		for idx in random_indexes:
-			sensor_node = NodeGene(self.get_next_index(), types.SENSOR)
-			self.sensor_nodes.append(sensor_node)
+		for i in range(output_num):
+			out_node = NodeGene(self.get_next_index(), types.OUTPUT, i)
+			self.node_genes.append(out_node)
 
 
 	def initialise_connections(self, n):
@@ -101,7 +92,20 @@ class Genome:
 	def forward(self, x):
 		pass
 		# x is the input array flattened
-		# 
+		# create a list of all values in x that are being used as sensor nodes
+		# create a list for all hidden and output nodes, initialisating with all zeros
+		# for each sensor node
+		#   find all outgoing connections
+		#   multiply sensor node with connection weight and accumulate value in respective out node
+		#   repeat above two lines but for the out node 
+		# (forward breadth-first search)
+		#
+		# for each output node
+		#   find all incoming connections
+		#   if the in_node has incoming connections then recursively find their incoming connections
+		#   if the in_node has no incoming connections then multiply the node with the connection
+		#      and store result in parent node
+		# (reverse depth-first search)
 
 
 	def mutate_node(self):
