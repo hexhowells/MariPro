@@ -40,12 +40,18 @@ class ConnectGene:
 
 class Genome:
 	""" Class to represent the Genome
+
+		Args:
+			sensor_num (int): number of sensor nodes
+			output_num (int): number of output nodes
 	"""
-	def __init__(self):
+	def __init__(self, sensor_num, output_num):
 		self.node_genes = []
 		self.connect_genes = []
 		self.next_index = 0
 		self.innovation = 0
+		self.sensor_num = sensor_num
+		self.output_num = output_num
 
 
 	def __len__(self):
@@ -58,20 +64,18 @@ class Genome:
 		return idx
 
 
-	def initialise_nodes(self, sensor_num, output_num):
+	def initialise_nodes(self):
 		""" Initialise the node genes in the Genome
 			Will create nodes for all output and input nodes possible
-
-				sensor_num (int): number of sensor nodes
-				output_num (int): number of output nodes
 		"""
+
 		# add sensor nodes
-		for i in range(sensor_num):
+		for i in range(self.sensor_num):
 			sensor_node = NodeGene(self.get_next_index(), types.SENSOR, i)
 			self.node_genes.append(sensor_node)
 
 		# add output nodes
-		for i in range(output_num):
+		for i in range(self.output_num):
 			out_node = NodeGene(self.get_next_index(), types.OUTPUT, i)
 			self.node_genes.append(out_node)
 
@@ -85,8 +89,16 @@ class Genome:
 		"""
 		assert len(self) != 0, "Need to initialise the Node Genes before initialising the Connection Genes"
 
-		for _ in range(n):
-			pass
+		a = 0
+		b = self.sensor_num
+		c = self.sensor_num + 1
+		d = self.sensor_num + self.output_num
+		connection_tuples = [(random.randint(a, b), random.randint(c, d)) for _ in range(n)]
+
+		for (in_node, out_node) in connection_tuples:
+			connection = ConnectGene(in_node, out_node, self.innovation, random.uniform(-0.1, 0.1))
+			self.connect_genes.append(connection)
+			
 
 
 	def forward(self, x):
@@ -121,7 +133,7 @@ class Genome:
 		# find two unconnected nodes, add a random connection between them
 
 
-	def get_excess_nodes(self):
+	def get_excess_nodes(self, connections):
 		pass
 		# if connection exists in self but not in connections
 		# and if self.connection.innovation is above max innovation number in connections
