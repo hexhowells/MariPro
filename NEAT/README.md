@@ -26,7 +26,7 @@ Connect Genes represent the connections between nodes, metatdata specifies the f
   <img src="https://github.com/hexhowells/MariPro/blob/main/NEAT/images/mutation.jpg" width=60%>
 </p>
 
-Mutation can occur at both the weight connections and the network structure.
+Mutation can occur at both the weight connections and the network structure, a global innovation number is incremented with every new gene created through mutation, in order to keep track of the age of each mutation (used later on).
 
 Weight mutation is implemented the same as with other NeuroEvolution methods.
 
