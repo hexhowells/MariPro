@@ -37,6 +37,9 @@ class ConnectGene:
 		self.weight = weight if weight else random.uniform(-1, 1)
 		self.enabled = enabled
 
+	def __str__(self):
+		return f'ConnectGene {self.node_in} -> {self.node_out}\tInnovation: {self.innovation}\tenabled={self.enabled}'
+
 
 class Genome:
 	""" Class to represent the Genome
