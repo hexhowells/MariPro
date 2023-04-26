@@ -1,44 +1,7 @@
 import node_types as types
+from node import NodeGene
+from connection import ConnectGene
 import random
-
-
-class NodeGene:
-	""" Class to represent the Node Gene
-
-		Args:
-			node_idx (int): index of the node
-			node_type (string): node type
-			ref (int): reference index to input or output array
-	"""
-	def __init__(self, node_idx, node_type, ref=None):
-		self.idx = node_idx
-		self.type = node_type
-		self.ref = ref
-
-	def __str__(self):
-		ref_str = "Ref: "+str(self.ref) if self.ref is not None else ""
-		return f'NodeGene {self.idx}\tType: {self.type}\t{ref_str}'
-
-
-class ConnectGene:
-	""" Class to represent the Connection Gene
-
-		Args:
-			node_in (int): index for the input node
-			node_out (int): index for the output node
-			innovatinon (int): the innovation number
-			weight (float): the connection weight
-			enabled (boolean): if the connection is enabled
-	"""
-	def __init__(self, node_in, node_out, innovation, weight=None, enabled=True):
-		self.node_in = node_in
-		self.node_out = node_out
-		self.innovation = innovation
-		self.weight = weight if weight else random.uniform(-1, 1)
-		self.enabled = enabled
-
-	def __str__(self):
-		return f'ConnectGene {self.node_in} -> {self.node_out}\tInnovation: {self.innovation}\tenabled={self.enabled}'
 
 
 class Genome:
@@ -58,7 +21,7 @@ class Genome:
 
 
 	def __len__(self):
-		return len(self.node_genes)
+		return len(self.node_genes) + len(self.connect_genes)
 
 
 	def get_next_index(self):
@@ -93,19 +56,20 @@ class Genome:
 		assert len(self) != 0, "Need to initialise the Node Genes before initialising the Connection Genes"
 
 		a = 0
-		b = self.sensor_num
-		c = self.sensor_num + 1
-		d = self.sensor_num + self.output_num
+		b = self.sensor_num - 1
+		c = self.sensor_num
+		d = self.sensor_num + self.output_num - 1
 		connection_tuples = [(random.randint(a, b), random.randint(c, d)) for _ in range(n)]
 
 		for (in_node, out_node) in connection_tuples:
 			connection = ConnectGene(in_node, out_node, self.innovation, random.uniform(-0.1, 0.1))
 			self.connect_genes.append(connection)
+			print(out_node)
+			self.node_genes[out_node].add_connection(connection)
 			
 
 
 	def forward(self, x):
-		pass
 		# x is the input array flattened
 		# create a list of all values in x that are being used as sensor nodes
 		# create a list for all hidden and output nodes, initialisating with all zeros
@@ -121,6 +85,25 @@ class Genome:
 		#   if the in_node has no incoming connections then multiply the node with the connection
 		#      and store result in parent node
 		# (reverse depth-first search)
+		def accumulate_connections(node):
+			value = 0
+			for connection in node.connections:
+				in_node = self.node_genes[connection.in_node]
+				if len(in_node.connections) == 0:
+					value += x[in_node.ref] * connection.weight
+				else:
+					value += accumulate_connections(in_node)
+
+			return value
+
+
+		output_nodes = self.node_genes[self.sensor_num : self.sensor_num+self.output_num]
+		
+		final_output = []
+		for out_node in output_nodes:
+			final_output.append(accumulate_connections(out_node))
+
+		return final_output
 
 
 	def mutate_node(self):
