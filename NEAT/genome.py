@@ -70,21 +70,11 @@ class Genome:
 
 
 	def forward(self, x):
-		# x is the input array flattened
-		# create a list of all values in x that are being used as sensor nodes
-		# create a list for all hidden and output nodes, initialisating with all zeros
-		# for each sensor node
-		#   find all outgoing connections
-		#   multiply sensor node with connection weight and accumulate value in respective out node
-		#   repeat above two lines but for the out node 
-		# (forward breadth-first search)
-		#
-		# for each output node
-		#   find all incoming connections
-		#   if the in_node has incoming connections then recursively find their incoming connections
-		#   if the in_node has no incoming connections then multiply the node with the connection
-		#      and store result in parent node
-		# (reverse depth-first search)
+		""" Compute forward pass through the network
+
+			Args:
+				x (array): array/list storing the values of the inputs
+		"""
 		def accumulate_connections(node):
 			value = 0
 			for connection in node.connections:
