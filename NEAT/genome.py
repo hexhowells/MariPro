@@ -95,6 +95,8 @@ class Genome:
 
 		return final_output
 
+	__call__ = forward
+
 
 	def mutate_node(self):
 		pass
