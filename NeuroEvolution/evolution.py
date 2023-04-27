@@ -126,7 +126,7 @@ class Evolution:
         """ Simulate playing the game using a given model, used for visualisation
 
             Args:
-                model (Genome): Neuroevolution model for making predictions
+                model (Model): Neuroevolution model for making predictions
         """
         self.env.reset()
         self.env.unwrapped.ram[1882] = 0  # set Mario's life counter to 0 to only allow one try
