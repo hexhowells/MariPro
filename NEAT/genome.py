@@ -64,7 +64,6 @@ class Genome:
 		for (in_node, out_node) in connection_tuples:
 			connection = ConnectGene(in_node, out_node, self.innovation, random.uniform(-0.1, 0.1))
 			self.connect_genes.append(connection)
-			print(out_node)
 			self.node_genes[out_node].add_connection(connection)
 			
 
@@ -107,7 +106,21 @@ class Genome:
 
 
 	def mutate_connection(self):
-		pass
+		out_nodes = list(range(self.sensor_num, len(self.node_genes)))
+		in_nodes = list(range(0, self.sensor_num)) + list(range(self.sensor_num+self.output_num, len(self.node_genes)))
+
+		random.shuffle(out_nodes)
+		random.shuffle(in_nodes)
+
+		for n_out in out_nodes:
+			out_connections = self.node_genes[n_out].connections
+			for n_in in in_nodes:
+				if n_in not in out_connections:
+					connection = ConnectGene(n_in, n_out, self.innovation, random.uniform(-0.1, 0.1))
+					self.connect_genes.append(connection)
+					self.node_genes[n_out].add_connection(connection)
+					return
+
 		# find two unconnected nodes, add a random connection between them
 
 
