@@ -98,11 +98,30 @@ class Genome:
 
 
 	def mutate_node(self):
-		pass
-		# pick a random connection from the gene pool
-		# add a new node and two new connections using the info from the old connection
-		# and conforming to the mutation rules (see paper)
-		# delete old connection?
+		""" Mutate node
+			selecs a random connection, disables it, then creates a new node with two new connections
+			joining the two nodes that were previously connected.
+		"""
+		self.innovation += 1
+		
+		rand_connection_idx = random.randint(0, len(self.connect_genes)-1)
+		rand_connection = self.connect_genes[rand_connection_idx]
+		rand_connection.enabled = False
+
+		node_idx = self.get_next_index()
+		new_node = NodeGene(node_idx, types.HIDDEN)
+		self.node_genes.append(new_node)
+
+		# old in node -> new node
+		new_connection1 = ConnectGene(rand_connection.in_node, node_idx, self.innovation, weight=1)
+		self.connect_genes.append(new_connection1)
+		self.node_genes[node_idx].add_connection(new_connection1)
+
+		# new node -> old out node
+		new_connection2 = ConnectGene(node_idx, rand_connection.out_node, self.innovation, weight=rand_connection.weight)
+		self.connect_genes.append(new_connection2)
+		self.node_genes[rand_connection.out_node].add_connection(new_connection2)
+
 
 
 	def mutate_connection(self):
