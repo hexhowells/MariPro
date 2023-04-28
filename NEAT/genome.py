@@ -106,6 +106,10 @@ class Genome:
 
 
 	def mutate_connection(self):
+		""" Mutate connection
+			creates a new connection between two unconnected nodes
+			Doesnt connect sensor nodes to sensor nodes or output nodes to output nodes
+		"""
 		out_nodes = list(range(self.sensor_num, len(self.node_genes)))
 		in_nodes = list(range(0, self.sensor_num)) + list(range(self.sensor_num+self.output_num, len(self.node_genes)))
 
@@ -120,8 +124,6 @@ class Genome:
 					self.connect_genes.append(connection)
 					self.node_genes[n_out].add_connection(connection)
 					return
-
-		# find two unconnected nodes, add a random connection between them
 
 
 	def get_excess_nodes(self, connections):
