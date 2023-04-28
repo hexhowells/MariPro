@@ -129,6 +129,8 @@ class Genome:
 			creates a new connection between two unconnected nodes
 			Doesnt connect sensor nodes to sensor nodes or output nodes to output nodes
 		"""
+		self.innovation += 1
+		
 		out_nodes = list(range(self.sensor_num, len(self.node_genes)))
 		in_nodes = list(range(0, self.sensor_num)) + list(range(self.sensor_num+self.output_num, len(self.node_genes)))
 
