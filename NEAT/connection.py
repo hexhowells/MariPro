@@ -1,3 +1,5 @@
+import random
+
 class ConnectGene:
 	""" Class to represent the Connection Gene
 
