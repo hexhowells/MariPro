@@ -177,6 +177,11 @@ class Genome:
 
 
 	def get_matching_genes(self, genome):
+		""" Get all matching connection genes between two genomes
+
+			Args:
+				genome (Genome): genome to get matching genes against
+		"""
 		matching_genes = []
 
 		for con1 in self.connect_genes:
