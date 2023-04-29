@@ -130,7 +130,7 @@ class Genome:
 			Doesnt connect sensor nodes to sensor nodes or output nodes to output nodes
 		"""
 		self.innovation += 1
-		
+
 		out_nodes = list(range(self.sensor_num, len(self.node_genes)))
 		in_nodes = list(range(0, self.sensor_num)) + list(range(self.sensor_num+self.output_num, len(self.node_genes)))
 
@@ -147,18 +147,23 @@ class Genome:
 					return
 
 
-	def get_excess_nodes(self, connections):
-		pass
-		# if connection exists in self but not in connections
-		# and if self.connection.innovation is above max innovation number in connections
-		# then connection is excess
+	def get_non_matching_genes(self, connections, max_innov):
+		""" Gets all excess and disjoint genes given a comparison genome
 
+			Args:
+				connections (list): list of connections from comparison genome
+				max_innov (int): max innovation number used in connections
+		"""
+		excess_genes = []
+		disjoint_genes = []
+		for c in self.connect_genes:
+			if (c not in connections):
+				if (c.innovation > max_innov):
+					excess_genes.append(c)
+				else:
+					disjoint_genes.append(c)
 
-	def get_disjoint_nodes(self, connections):
-		pass
-		# if connection exists in self but not in connections
-		# and if self.connection.innovation is below max innovation number in connections
-		# then connection is disjoint
+		return excess_genes, disjoint_genes
 
 
 	def compute_distance_score(self, genome):
