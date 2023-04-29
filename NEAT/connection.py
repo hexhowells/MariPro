@@ -18,7 +18,7 @@ class ConnectGene:
 		self.enabled = enabled
 
 	def __str__(self):
-		return f'ConnectGene {self.in_node} -> {self.out_node}\tInnovation: {self.innovation}\tenabled={self.enabled}'
+		return f'ConnectGene {self.in_node} -> {self.out_node}\tInnovation: {self.innovation}\tenabled={self.enabled}\tweight={self.weight}'
 
 
 	def __eq__(self, obj):
