@@ -147,18 +147,17 @@ class Genome:
 					return
 
 
-	def get_non_matching_genes(self, connections, max_innov):
+	def get_non_matching_genes(self, genome):
 		""" Gets all excess and disjoint genes given a comparison genome
 
 			Args:
-				connections (list): list of connections from comparison genome
-				max_innov (int): max innovation number used in connections
+				genome (Genome): genome to compare against
 		"""
 		excess_genes = []
 		disjoint_genes = []
 		for c in self.connect_genes:
-			if (c not in connections):
-				if (c.innovation > max_innov):
+			if (c not in genome.connect_genes):
+				if (c.innovation > genome.innovation):
 					excess_genes.append(c)
 				else:
 					disjoint_genes.append(c)
