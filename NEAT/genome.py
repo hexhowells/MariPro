@@ -165,6 +165,17 @@ class Genome:
 		return excess_genes, disjoint_genes
 
 
+	def get_matching_genes(self, genome):
+		matching_genes = []
+
+		for con1 in self.connect_genes:
+			for con2 in genome.connect_genes:
+				if con1 == con2:
+					matching_genes.append((con1, con2))
+
+		return matching_genes
+
+
 	def compute_distance_score(self, genome):
 		pass
 		# get excess and disjoint nodes from self using genome.connections
