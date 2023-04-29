@@ -19,3 +19,7 @@ class ConnectGene:
 
 	def __str__(self):
 		return f'ConnectGene {self.in_node} -> {self.out_node}\tInnovation: {self.innovation}\tenabled={self.enabled}'
+
+
+	def __eq__(self, obj):
+		return (self.in_node == obj.in_node) and (self.out_node == obj.out_node)
