@@ -52,8 +52,8 @@ The distance function is specified as follows:
 \large{\delta = \frac{c_1E}{N} + \frac{c_2D}{N}+c_3 \cdot \bar{W}}
 ```
 
-- ```E``` - Number of Excess nodes
-- ```D``` - Number of Disjoint nodes
+- ```E``` - Number of Excess nodes (in both genomes)
+- ```D``` - Number of Disjoint nodes (in both genomes)
 - ```N``` - Number of genes in the larger genome
 - ```c's``` - Adjustable coefficients to set the importance of each factor
 - ```W``` - Average weight differences of matching genes
