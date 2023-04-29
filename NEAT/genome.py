@@ -11,13 +11,24 @@ class Genome:
 			sensor_num (int): number of sensor nodes
 			output_num (int): number of output nodes
 	"""
-	def __init__(self, sensor_num, output_num):
+	def __init__(self, 
+			sensor_num, 
+			output_num,
+			coefficient1=1,
+			coefficient2=1,
+			coefficient3=1):
 		self.node_genes = []
 		self.connect_genes = []
+
 		self.next_index = 0
 		self.innovation = 0
+
 		self.sensor_num = sensor_num
 		self.output_num = output_num
+
+		self.coefficient1 = coefficient1
+		self.coefficient2 = coefficient2
+		self.coefficient3 = coefficient3
 
 
 	def __len__(self):
@@ -177,7 +188,25 @@ class Genome:
 
 
 	def compute_distance_score(self, genome):
-		pass
-		# get excess and disjoint nodes from self using genome.connections
-		# get avg weight difference between self.connections and genome.connections
-		# get max( len(self), len(genome) )
+		""" Compute the distance score between two genomes
+
+			Args:
+				genome (Genome): genome to compute the distance score against
+		"""
+		excess1, disjoint1 = self.get_non_matching_genes(genome)
+		excess2, disjoint2 = genome.get_non_matching_genes(self)
+
+		excess = len(excess1) + len(excess2)
+		disjoint = len(disjoint1) + len(disjoint2)
+
+		num_genes = max(len(self), len(genome))
+
+		matching = self.get_matching_genes(genome)
+		avg_weight_diff = [abs(x[0].weight - x[1].weight) for x in matching]
+		avg_weight_diff = sum(avg_weight_diff) / len(avg_weight_diff)
+
+		seg1 = (self.coefficient1 * excess) / num_genes
+		seg2 = (self.coefficient2 * disjoint) / num_genes
+		seg3 = self.coefficient3 * avg_weight_diff
+
+		return seg1 + seg2 + seg3
