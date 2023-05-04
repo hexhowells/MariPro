@@ -1,5 +1,6 @@
 from evolution import Evolution
 import selection
+import crossover
 import mutation
 import wandb
 
@@ -22,9 +23,11 @@ def main():
     # setup environment
     print("\nInitialising Environments...")
     model = Evolution(
-        population_size=50,
+        population_size=100,
         selection=selection.elitist_selection,
-        mutation=mutation.weighted_mutation
+        crossover=crossover.one_point_crossover,
+        mutation=mutation.weighted_mutation,
+        env_name='SuperMarioBros-1-1-v0'
         )
 
 
@@ -45,7 +48,8 @@ def main():
         'selection': 'elitist roulette wheel selection',
         'mutation': 'weighted mutation',
         'spread_rate': 0.1,
-        'crossover': 'None'
+        'crossover': 'one-point crossover',
+        'selection_pressure': 'None'
     }
     wandb.init(project='Evolution-v1', config=config)
 
