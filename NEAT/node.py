@@ -15,6 +15,12 @@ class NodeGene:
 	def add_connection(self, connection):
 		self.connections.append(connection)
 
+	def has_connection(self, in_node):
+		for connection in self.connections:
+			if in_node == connection.in_node:
+				return True
+		return False
+
 	def __str__(self):
 		ref_str = "Ref: "+str(self.ref) if self.ref is not None else ""
 		return f'NodeGene {self.idx}\tType: {self.type}\t{ref_str}'
