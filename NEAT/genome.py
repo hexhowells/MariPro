@@ -2,6 +2,7 @@ import node_types as types
 from node import NodeGene
 from connection import ConnectGene
 import random
+import utils
 
 
 class Genome:
@@ -94,7 +95,7 @@ class Genome:
 				else:
 					value += accumulate_connections(in_node)
 
-			return value
+			return utils.sigmoid(value)
 
 
 		output_nodes = self.node_genes[self.sensor_num : self.sensor_num+self.output_num]
@@ -149,9 +150,8 @@ class Genome:
 		random.shuffle(in_nodes)
 
 		for n_out in out_nodes:
-			out_connections = self.node_genes[n_out].connections
 			for n_in in in_nodes:
-				if n_in not in out_connections:
+				if not self.node_genes[n_out].has_connection(n_in):
 					connection = ConnectGene(n_in, n_out, self.innovation, random.uniform(-0.1, 0.1))
 					self.connect_genes.append(connection)
 					self.node_genes[n_out].add_connection(connection)

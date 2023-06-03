@@ -1,6 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import math
+
+
+def sigmoid(x):
+    """ Sigmoid activation function
+
+    Args:
+        x (int): number to pass through the activation function
+    """
+    return 1 / (1 + math.exp(-x))
 
 
 def draw_hitboxes(screen, hitboxes):
