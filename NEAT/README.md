@@ -40,6 +40,17 @@ Topology mutation can occur in two ways:
 - Add a new node gene. 
 - Split a connection gene by disabling the connection and adding two new connections between the split nodes. the incoming weight is set to 1, the outgoing weight is set to the same as the old weight.
 
+## Crossover
+
+<p align="center">
+  <img src="https://github.com/hexhowells/MariPro/blob/main/NEAT/images/crossover.jpg" width=50%>
+</p>
+
+Crossover uses the innovation numbers to identifying matching and non-matching genes between the two parents. Genes with an innovation number that occur inside the other parents innovation numbers are marked as disjoint and genes with an innovation number that occur outside the other parents innovation numbers are marked as excess. If two genes share the same innovation number then they are considered matching.
+
+Matching genes are chosen randomly between each parent to be used in the offspring. Disjoint and Excess genes are inherited from the more fit parent. Since some genes may be disabled from a parent there is a chance that the offspring will inherit disabled genes.
+
+
 ## Speciation
 
 Since topological mutations typically decrease the networks fitness, time should be given to allow these networks time to adapt to their mutation. This is done through speciation.
