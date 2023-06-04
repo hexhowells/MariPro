@@ -15,6 +15,7 @@ class Genome:
 	def __init__(self, 
 			sensor_num, 
 			output_num,
+			innovation=0,
 			coefficient1=1,
 			coefficient2=1,
 			coefficient3=1):
@@ -22,7 +23,7 @@ class Genome:
 		self.connect_genes = []
 
 		self.next_index = 0
-		self.innovation = 0
+		self.innovation = innovation
 
 		self.sensor_num = sensor_num
 		self.output_num = output_num
@@ -56,6 +57,18 @@ class Genome:
 		for i in range(self.output_num):
 			out_node = NodeGene(self.get_next_index(), types.OUTPUT, i)
 			self.node_genes.append(out_node)
+
+
+	def add_hidden_nodes(self, n):
+		""" Add n hidden nodes to genome
+			Used for crossover to initialise an offpring with the correct number of nodes
+
+			Args:
+				n (int): number of hidden nodes to create
+		"""
+		for _ in range(n):
+			hidden_node = NodeGene(self.get_next_index(), types.HIDDEN)
+			self.node_genes.append(hidden_node)
 
 
 	def initialise_connections(self, n):
