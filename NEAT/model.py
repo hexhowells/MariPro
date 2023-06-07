@@ -66,6 +66,9 @@ class NEAT:
 		self.coefficient3 = coefficient3
 
 		self.population = []
+		self.fitness_scores = []
+		self.average_fitness_score = 0
+
 		self.input_size = (13 * 16) + 1
 		self.init_connection_size = 10
 		self.output_size = len(SIMPLE_MOVEMENT)
@@ -86,6 +89,19 @@ class NEAT:
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
 			self.population.append(genome)
+
+
+	def evaluate_population(self):
+		pass
+
+
+	def select_offspring(self):
+		pass
+
+
+	def simulate_generation(self):
+		pass
+		self.evaluate_population()
 
 
 	def simulate(self, model):
@@ -132,3 +148,17 @@ class NEAT:
 		        break  
 
 		self.env.viewer.close()
+
+
+	def get_best_chromosome(self):
+        """ Get the current best chromosome from the population
+        """
+        best_idx = self.fitness_scores.index(max(self.fitness_scores))
+        return self.population[best_idx]
+
+
+    def show_best_performer(self):
+        """ Play the actions of the best performing individual in the population
+        """
+        best_chromosome = self.get_best_chromosome()
+        self.play_actions(best_chromosome)
