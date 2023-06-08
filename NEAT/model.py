@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import copy
 
-#from multi_environment import MultiEnvironment
+from multi_environment import MultiEnvironment
 import utils
 from genome import Genome
 
@@ -51,15 +51,16 @@ class NEAT:
 
 		self.population_size = population_size
 		self.env_name = env_name
+		self.simulation_length = 100_000
 
-		self.weight_mutation_rate = .weight_mutation_rate
+		self.weight_mutation_rate = weight_mutation_rate
 		self.weight_random_rate = weight_random_rate
 
 		self.gene_disabled_rate = gene_disabled_rate
 		self.crossover_rate = crossover_rate
 		self.interspecies_mating_rate = interspecies_mating_rate
 		self.new_node_rate = new_node_rate
-		self.new_link_mutation_rate = new_link_mutation_rate
+		self.new_link_rate = new_link_rate
 
 		self.coefficient1 = coefficient1
 		self.coefficient2 = coefficient2
@@ -74,6 +75,7 @@ class NEAT:
 		self.output_size = len(SIMPLE_MOVEMENT)
 
 		self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
+		self.multi_envs = MultiEnvironment(env_name, self)
 
 
 	def initialise_population(self):
@@ -83,16 +85,23 @@ class NEAT:
 			genome = Genome(
 				self.input_size, 
 				self.output_size, 
-				coefficient1=coefficient1, 
-				coefficient2=coefficient2,
-				coefficient3=coefficient3)
+				coefficient1=self.coefficient1, 
+				coefficient2=self.coefficient2,
+				coefficient3=self.coefficient3)
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
 			self.population.append(genome)
 
 
 	def evaluate_population(self):
-		pass
+		""" Run the simulation and get the fitness score for each individual in the population
+		"""
+		population, fitness_scores = self.multi_envs.run(self.population)
+
+		self.population = list(population)
+		self.fitness_scores = list(fitness_scores)
+
+		self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
 
 
 	def select_offspring(self):
@@ -100,8 +109,13 @@ class NEAT:
 
 
 	def simulate_generation(self):
-		pass
-		self.evaluate_population()
+		self.evaluate_population()  # evalutate by species
+		print(self.fitness_scores)
+		self.selection()
+		self.crossover()
+		self.speciation()
+
+
 
 
 	def simulate(self, model):
@@ -151,14 +165,14 @@ class NEAT:
 
 
 	def get_best_chromosome(self):
-        """ Get the current best chromosome from the population
-        """
-        best_idx = self.fitness_scores.index(max(self.fitness_scores))
-        return self.population[best_idx]
+		""" Get the current best chromosome from the population
+		"""
+		best_idx = self.fitness_scores.index(max(self.fitness_scores))
+		return self.population[best_idx]
 
 
-    def show_best_performer(self):
-        """ Play the actions of the best performing individual in the population
-        """
-        best_chromosome = self.get_best_chromosome()
-        self.play_actions(best_chromosome)
+	def show_best_performer(self):
+		""" Play the actions of the best performing individual in the population
+		"""
+		best_chromosome = self.get_best_chromosome()
+		self.play_actions(best_chromosome)
