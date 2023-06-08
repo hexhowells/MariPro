@@ -220,8 +220,12 @@ class Genome:
 		num_genes = max(len(self), len(genome))
 
 		matching = self.get_matching_genes(genome)
-		avg_weight_diff = [abs(x[0].weight - x[1].weight) for x in matching]
-		avg_weight_diff = sum(avg_weight_diff) / len(avg_weight_diff)
+		_avg_weight_diff = [abs(x[0].weight - x[1].weight) for x in matching]
+		
+		if len(_avg_weight_diff) == 0:
+			avg_weight_diff = 0
+		else:
+			avg_weight_diff = sum(_avg_weight_diff) / len(_avg_weight_diff)
 
 		seg1 = (self.coefficient1 * excess) / num_genes
 		seg2 = (self.coefficient2 * disjoint) / num_genes
