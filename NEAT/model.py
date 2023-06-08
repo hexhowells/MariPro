@@ -30,6 +30,7 @@ class NEAT:
 			interspecies_mating_rate (float): interspecies mating rate
 			new_node_rate (float): probability of new nodes being created
 			new_link__rate (float): probability of a new connection created
+			dist_threshold (float): threshold used to determine if a genome belongs to a species
 			coefficient1 (float): speciation coefficient 1 (excess node)
 			coefficient2 (float): speciation coefficient 2  (disjoint node)
 			coefficient3 (float): speciation coefficient 3  (connection weight)
@@ -44,6 +45,7 @@ class NEAT:
 		interspecies_mating_rate=0.001,
 		new_node_rate=0.03,
 		new_link_rate=0.05,
+		dist_threshold=3.0,
 		coefficient1=1,
 		coefficient2=1,
 		coefficient3=1
@@ -67,8 +69,11 @@ class NEAT:
 		self.coefficient3 = coefficient3
 
 		self.population = []
+		self.species = {0: []}
+		self.current_species = 1
 		self.fitness_scores = []
 		self.average_fitness_score = 0
+		self.dist_threshold = dist_threshold
 
 		self.input_size = (13 * 16) + 1
 		self.init_connection_size = 10
@@ -93,6 +98,22 @@ class NEAT:
 			self.population.append(genome)
 
 
+	def initialise_species(self):
+		""" Place the initial genome pool into species
+		"""
+		self.species[0].append(self.population[0])  # start new species
+
+		for genome in self.population[1:]:  # check every genome not in a species
+			for k in self.species.keys():  # check every species
+				dist = genome.compute_distance_score(self.species[k][0])
+				if dist <= self.dist_threshold:
+					self.species[k].append(genome)
+					break
+			else:  # couldnt find a species for the genome
+				self.species[self.current_species] = [genome]  # create new species
+				self.current_species += 1
+
+
 	def evaluate_population(self):
 		""" Run the simulation and get the fitness score for each individual in the population
 		"""
@@ -104,7 +125,7 @@ class NEAT:
 		self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
 
 
-	def select_offspring(self):
+	def selection(self):
 		pass
 
 
