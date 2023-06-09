@@ -137,6 +137,20 @@ class NEAT:
 				self.fitness_scores[genome_idx] /= species_size  # fitness sharing
 
 
+	def get_average_species_fitness(self):
+		""" Get average fitness scores for each species
+		"""
+		avg_species_fitness_scores = []
+
+		for genome_indexes in self.species.values():
+			_fitness_scores = [self.fitness_scores[i] for i in genome_indexes]
+			avg_fitness = sum(_fitness_scores) / len(_fitness_scores)
+			avg_species_fitness_scores.append(avg_fitness)
+
+		return avg_species_fitness_scores
+
+
+
 	def selection(self):
 		pass
 
@@ -153,11 +167,12 @@ class NEAT:
 	def simulate_generation(self):
 		self.evaluate_population()
 		self.fitness_sharing()
+
+		avg_species_fitness = self.get_average_species_fitness()
+
 		self.selection()
 		self.crossover()
 		self.speciation()
-
-
 
 
 	def simulate(self, model):
