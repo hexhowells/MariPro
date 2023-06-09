@@ -31,6 +31,7 @@ class NEAT:
 			new_node_rate (float): probability of new nodes being created
 			new_link__rate (float): probability of a new connection created
 			dist_threshold (float): threshold used to determine if a genome belongs to a species
+			culling_factor (float): value for determining diversity in species
 			coefficient1 (float): speciation coefficient 1 (excess node)
 			coefficient2 (float): speciation coefficient 2  (disjoint node)
 			coefficient3 (float): speciation coefficient 3  (connection weight)
@@ -46,6 +47,7 @@ class NEAT:
 		new_node_rate=0.03,
 		new_link_rate=0.05,
 		dist_threshold=3.0,
+		culling_factor=1.0,
 		coefficient1=1,
 		coefficient2=1,
 		coefficient3=1
@@ -74,6 +76,7 @@ class NEAT:
 		self.fitness_scores = []
 		self.average_fitness_score = 0
 		self.dist_threshold = dist_threshold
+		self.culling_factor = culling_factor
 
 		self.input_size = (13 * 16) + 1
 		self.init_connection_size = 10
@@ -150,6 +153,15 @@ class NEAT:
 		return avg_species_fitness_scores
 
 
+	def get_total_adjusted_fitness(self, avg_fitness_scores):
+		adj_fitness_scores = []
+
+		for i, avg_fitness in enumerate(avg_fitness_scores):
+			adj_fitness = avg_fitness / len(self.species[i]) * self.culling_factor
+			adj_fitness_scores.append(avg_fitness)
+
+		return adj_fitness_scores
+
 
 	def selection(self):
 		pass
@@ -169,6 +181,7 @@ class NEAT:
 		self.fitness_sharing()
 
 		avg_species_fitness = self.get_average_species_fitness()
+		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 
 		self.selection()
 		self.crossover()
