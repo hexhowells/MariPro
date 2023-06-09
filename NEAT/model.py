@@ -101,16 +101,18 @@ class NEAT:
 	def initialise_species(self):
 		""" Place the initial genome pool into species
 		"""
-		self.species[0].append(self.population[0])  # start new species
+		self.species[0].append(0)  # start new species
 
-		for genome in self.population[1:]:  # check every genome not in a species
+		for i in range(1, len(self.population)):  # check every genome not in a species
+			genome = self.population[i]
 			for k in self.species.keys():  # check every species
-				dist = genome.compute_distance_score(self.species[k][0])
+				first_genome = self.species[k][0]
+				dist = genome.compute_distance_score(self.population[first_genome])
 				if dist <= self.dist_threshold:
-					self.species[k].append(genome)
+					self.species[k].append(i)
 					break
 			else:  # couldnt find a species for the genome
-				self.species[self.current_species] = [genome]  # create new species
+				self.species[self.current_species] = [i]  # create new species
 				self.current_species += 1
 
 
@@ -130,8 +132,8 @@ class NEAT:
 
 
 	def simulate_generation(self):
-		self.evaluate_population()  # evalutate by species
-		print(self.fitness_scores)
+		self.evaluate_population()
+		self.fitness_sharing()
 		self.selection()
 		self.crossover()
 		self.speciation()
