@@ -141,6 +141,15 @@ class NEAT:
 		pass
 
 
+	def crossover(self):
+		pass
+
+
+	def speciation(self):
+		self.species = {0: []}
+		self.initialise_species()
+
+
 	def simulate_generation(self):
 		self.evaluate_population()
 		self.fitness_sharing()
@@ -208,4 +217,4 @@ class NEAT:
 		""" Play the actions of the best performing individual in the population
 		"""
 		best_chromosome = self.get_best_chromosome()
-		self.play_actions(best_chromosome)
+		self.simulate(best_chromosome)
