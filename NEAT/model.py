@@ -39,6 +39,7 @@ class NEAT:
 	def __init__(self,
 		population_size=100,
 		env_name="SuperMarioBros-v0",
+		survival_rate=0.2,
 		weight_mutation_rate=0.8,
 		weight_random_rate=0.1,
 		gene_disabled_rate=0.75,
@@ -57,6 +58,7 @@ class NEAT:
 		self.env_name = env_name
 		self.simulation_length = 100_000
 
+		self.survival_rate = survival_rate
 		self.weight_mutation_rate = weight_mutation_rate
 		self.weight_random_rate = weight_random_rate
 
@@ -154,6 +156,11 @@ class NEAT:
 
 
 	def get_total_adjusted_fitness(self, avg_fitness_scores):
+		""" Get total adjusted fitness scores for each species
+
+			Args:
+				avg_fitness_scores (list): average fitness scores for each species
+		"""
 		adj_fitness_scores = []
 
 		for i, avg_fitness in enumerate(avg_fitness_scores):
@@ -161,6 +168,23 @@ class NEAT:
 			adj_fitness_scores.append(avg_fitness)
 
 		return adj_fitness_scores
+
+
+	def get_offspring_rates(self, adj_fitness_scores):
+		""" Get offspring rates for each species
+
+			Args:
+				adj_fitness_scores (list): adjusted fitness scores for each species
+		"""
+		total_adj_fitness = sum(adj_fitness_scores)
+		num_offspring = []
+		offspring_rate = (1 - self.survival_rate) * 100
+
+		for adj_fitness in adj_fitness_scores:
+			offspring = adj_fitness * offspring_rate / total_adj_fitness
+			num_offspring.append(offspring)
+
+		return num_offspring
 
 
 	def selection(self):
@@ -182,6 +206,8 @@ class NEAT:
 
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
+		offspring_rates = self.get_offspring_rates(adj_species_fitness)
+		print(offspring_rates)
 
 		self.selection()
 		self.crossover()
