@@ -127,6 +127,16 @@ class NEAT:
 		self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
 
 
+	def fitness_sharing(self):
+		""" Explicit fitness sharing, genomes in larger species get their fitness scaled down more
+			helps discourages species becoming too large
+		"""
+		for species_id, species_list in self.species.items():
+			species_size = len(species_list)
+			for genome_idx in species_list:
+				self.fitness_scores[genome_idx] /= species_size  # fitness sharing
+
+
 	def selection(self):
 		pass
 
