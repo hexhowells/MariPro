@@ -21,6 +21,7 @@ class NEAT:
 	""" Class for NEAT.
 
         Args:
+        	selection (function): the selection function to apply
             population_size (int): initial size of the population
             env_name (string): the name of the gym environment
             weight_mutation_rate (float): probabilty of getting a connection weight mutated
@@ -37,6 +38,7 @@ class NEAT:
 			coefficient3 (float): speciation coefficient 3  (connection weight)
     """
 	def __init__(self,
+		selection,
 		population_size=100,
 		env_name="SuperMarioBros-v0",
 		survival_rate=0.2,
@@ -57,6 +59,7 @@ class NEAT:
 		self.population_size = population_size
 		self.env_name = env_name
 		self.simulation_length = 100_000
+		self.selection_fn = selection
 
 		self.survival_rate = survival_rate
 		self.weight_mutation_rate = weight_mutation_rate
@@ -178,17 +181,44 @@ class NEAT:
 		"""
 		total_adj_fitness = sum(adj_fitness_scores)
 		num_offspring = []
-		offspring_rate = (1 - self.survival_rate) * 100
 
 		for adj_fitness in adj_fitness_scores:
-			offspring = adj_fitness * offspring_rate / total_adj_fitness
+			offspring = adj_fitness * self.survival_rate / total_adj_fitness
 			num_offspring.append(offspring)
 
 		return num_offspring
 
 
-	def selection(self):
-		pass
+	def selection(self, offspring_rates):
+		""" Apply a selection function to select survivors for the next generation
+
+			Args:
+				offspring_rates (list): how many survivors to select for each species
+		"""
+		new_population = []
+		new_fitness_scores = []
+		new_species = {}
+		new_pop_count = 0
+
+		for i, offspring_rate in enumerate(offspring_rates):
+			# get genome and fitness scores of each member in species
+			species_population = [self.population[i] for i in self.species[i]]
+			species_fitness = [self.fitness_scores[i] for i in self.species[i]]
+
+			# select members from the species for next generation
+			_population, _fitness = selected_genomes = self.selection_fn(species_population, species_fitness, offspring_rate)
+
+			# add survivors to new generation
+			new_population += _population
+			new_fitness_scores += _fitness
+
+			# add survivors back into species
+			new_species[i] = [j for j in range(new_pop_count, len(_population))]
+			new_pop_count += len(_population)
+
+		self.population = new_population
+		self.fitness_scores = new_fitness_scores
+		self.species = new_species
 
 
 	def crossover(self):
@@ -196,8 +226,7 @@ class NEAT:
 
 
 	def speciation(self):
-		self.species = {0: []}
-		self.initialise_species()
+		pass
 
 
 	def simulate_generation(self):
@@ -207,9 +236,8 @@ class NEAT:
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
-		print(offspring_rates)
 
-		self.selection()
+		self.selection(offspring_rates)
 		self.crossover()
 		self.speciation()
 
