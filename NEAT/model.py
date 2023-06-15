@@ -225,7 +225,28 @@ class NEAT:
 		pass
 
 
-	def speciation(self):
+	def speciation(self, offspring):
+		""" Assign each new offspring to a species
+
+			Args:
+				offspring (list): list of offspring Genomes to be speciated
+		"""
+		num_parents = len(self.population)
+		for i, genome in enumerate(offspring):  # check each genome in the new offspring
+			genome_idx = num_parents + i
+
+			for k in self.species.keys():  # check every species
+				first_genome = self.species[k][0]
+				dist = genome.compute_distance_score(self.population[first_genome])
+				if dist <= self.dist_threshold:
+					self.species[k].append(genome_idx)
+					break
+			else:  # couldnt find a species for the genome
+				self.species[self.current_species] = [genome_idx]  # create new species
+				self.current_species += 1
+
+
+	def mutation(self):
 		pass
 
 
@@ -238,8 +259,9 @@ class NEAT:
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
 
 		self.selection(offspring_rates)
-		self.crossover()
-		self.speciation()
+		new_offspring = self.crossover()
+		self.speciation(new_offspring)
+		self.mutation()
 
 
 	def simulate(self, model):
