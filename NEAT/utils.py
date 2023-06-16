@@ -8,7 +8,7 @@ def sigmoid(x):
     """ Sigmoid activation function
 
     Args:
-        x (int): number to pass through the activation function
+        x (float): number to pass through the activation function
     """
     return 1 / (1 + math.exp(-x))
 
