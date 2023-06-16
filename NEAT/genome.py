@@ -104,7 +104,10 @@ class Genome:
 			for connection in node.connections:
 				in_node = self.node_genes[connection.in_node]
 				if len(in_node.connections) == 0:
-					value += x[in_node.ref] * connection.weight
+					if in_node.ref != None:  # found hidden node without any inbound nodes
+						value += x[in_node.ref] * connection.weight
+					else:
+						value = 0
 				else:
 					value += accumulate_connections(in_node)
 

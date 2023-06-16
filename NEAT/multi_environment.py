@@ -80,7 +80,7 @@ class MultiEnvironment():
                 input_vector = torch.from_numpy(screen).float().flatten()
                 input_vector = torch.cat((input_vector, torch.tensor([1])))
                 
-                pred = model(input_vector)
+                pred = model(input_vector.numpy())
                 pred = torch.FloatTensor(pred)
 
                 action = torch.argmax(pred).item()
