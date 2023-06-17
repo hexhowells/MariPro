@@ -49,7 +49,7 @@ class NEAT:
 		interspecies_mating_rate=0.001,
 		new_node_rate=0.03,
 		new_link_rate=0.05,
-		dist_threshold=3.0,
+		dist_threshold=0.3,
 		culling_factor=1.0,
 		coefficient1=1,
 		coefficient2=1,
@@ -222,7 +222,13 @@ class NEAT:
 
 
 	def crossover(self):
-		pass
+		for species_pop in self.species.values():
+			pass
+		# select 2 parents from a species
+		# call the crossover function you literally already wrote you idiot
+		# crossover(p1, p2, f1, f2)
+		# species with higher average fitness should breed more offspring
+		#   (could utilise offspring_rates maybe)
 
 
 	def speciation(self, offspring):
@@ -246,7 +252,11 @@ class NEAT:
 				self.current_species += 1
 
 
-	def mutation(self):
+	def structural_mutation(self):
+		pass
+
+
+	def weight_mutation(self):
 		pass
 
 
@@ -260,8 +270,10 @@ class NEAT:
 
 		self.selection(offspring_rates)
 		new_offspring = self.crossover()
+
 		self.speciation(new_offspring)
-		self.mutation()
+		self.structural_mutation()
+		self.weight_mutation()
 
 
 	def simulate(self, model):
