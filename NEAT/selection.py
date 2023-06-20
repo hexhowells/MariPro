@@ -37,7 +37,7 @@ def roulette_wheel_selection(population, fitness_scores, survival_rate):
 	new_population = [population[i] for i in indexes]
 	new_fitness_scores = [fitness_scores[i] for i in indexes]
 
-	return new_population, new_fitness_scores
+	return new_population
 
 
 def elitist_selection(population, fitness_scores, survival_rate, topk=3):
@@ -67,7 +67,7 @@ def elitist_selection(population, fitness_scores, survival_rate, topk=3):
 	population = top_population + [population[i] for i in indexes]
 	fitness_scores = top_fitness_scores + [fitness_scores[i] for i in indexes]
 
-	return population, fitness_scores
+	return population
 
 
 def linear_rank_selection(population, fitness_scores, survival_rate, sp=1.9):
@@ -95,7 +95,7 @@ def linear_rank_selection(population, fitness_scores, survival_rate, sp=1.9):
 	population = [population[i] for i in indexes]
 	fitness_scores = [fitness_scores[i] for i in indexes]
 
-	return population, fitness_scores
+	return population
 
 
 def exponential_rank_selection(population, fitness_scores, survival_rate, sp=1.9):
@@ -124,7 +124,7 @@ def exponential_rank_selection(population, fitness_scores, survival_rate, sp=1.9
 	population = [population[i] for i in indexes]
 	fitness_scores = [fitness_scores[i] for i in indexes]
 
-	return population, fitness_scores
+	return population
 
 
 def tournament_selection(population, fitness_scores, survival_rate):
@@ -156,7 +156,7 @@ def tournament_selection(population, fitness_scores, survival_rate):
 		new_population.append(population.pop(winner))
 		new_fitness_scores.append(fitness_scores.pop(winner))
 
-	return new_population, new_fitness_scores
+	return new_population
 
 
 def truncation_selection(population, fitness_scores, survival_rate):
@@ -173,4 +173,4 @@ def truncation_selection(population, fitness_scores, survival_rate):
 	population = population[:survivor_size]
 	fitness_scores = fitness_scores[:survivor_size]
 
-	return population, fitness_scores
+	return population

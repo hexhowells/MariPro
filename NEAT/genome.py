@@ -31,6 +31,7 @@ class Genome:
 		self.coefficient1 = coefficient1
 		self.coefficient2 = coefficient2
 		self.coefficient3 = coefficient3
+		self.fitness = 0
 
 
 	def __len__(self):
