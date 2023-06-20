@@ -218,6 +218,17 @@ class NEAT:
 			self.species[i] = selected_genomes
 
 
+	def cull_species(self):
+		""" Remove any species with only a single member since they cannot breed
+		"""
+		species_to_cull = []
+		for species_id, species in self.species.items():
+			if len(species) < 2:
+				species_to_cull.append(species_id)
+
+		for species_id in species_to_cull:
+			self.species.pop(species_id, None)
+
 
 	def crossover(self):
 		for species_pop in self.species.values():
@@ -266,6 +277,8 @@ class NEAT:
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
 
 		self.selection(offspring_rates)
+		self.cull_species()
+
 		new_offspring = self.crossover()
 
 		self.speciation(new_offspring)
