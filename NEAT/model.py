@@ -78,7 +78,6 @@ class NEAT:
 		self.population = []
 		self.species = {0: []}
 		self.current_species = 1
-		self.fitness_scores = []
 		self.average_fitness_score = 0
 		self.dist_threshold = dist_threshold
 		self.culling_factor = culling_factor
@@ -103,46 +102,58 @@ class NEAT:
 				coefficient3=self.coefficient3)
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
+
 			self.population.append(genome)
 
 
 	def initialise_species(self):
 		""" Place the initial genome pool into species
 		"""
-		self.species[0].append(0)  # start new species
+		self.species[0].append(self.population[0])  # start new species
 
 		for i in range(1, len(self.population)):  # check every genome not in a species
 			genome = self.population[i]
 			for k in self.species.keys():  # check every species
 				first_genome = self.species[k][0]
-				dist = genome.compute_distance_score(self.population[first_genome])
+				dist = genome.compute_distance_score(first_genome)
 				if dist <= self.dist_threshold:
-					self.species[k].append(i)
+					self.species[k].append(self.population[i])
 					break
 			else:  # couldnt find a species for the genome
-				self.species[self.current_species] = [i]  # create new species
+				self.species[self.current_species] = [self.population[i]]  # create new species
 				self.current_species += 1
+
+		self.population = []
+
+
+	def get_population(self):
+		for species in self.species.values():
+			for genome in species:
+				yield genome
+
+
+	def population_size(self):
+		return len(self.get_population())
 
 
 	def evaluate_population(self):
 		""" Run the simulation and get the fitness score for each individual in the population
 		"""
-		population, fitness_scores = self.multi_envs.run(self.population)
+		self.multi_envs.run(list(self.get_population()))
 
-		self.population = list(population)
-		self.fitness_scores = list(fitness_scores)
+		fitness_scores = [genome.fitness for genome in self.get_population()]
 
-		self.average_fitness_score = sum(self.fitness_scores) // len(self.fitness_scores)
+		self.average_fitness_score = sum(fitness_scores) // len(fitness_scores)
 
 
 	def fitness_sharing(self):
 		""" Explicit fitness sharing, genomes in larger species get their fitness scaled down more
 			helps discourages species becoming too large
 		"""
-		for species_id, species_list in self.species.items():
-			species_size = len(species_list)
-			for genome_idx in species_list:
-				self.fitness_scores[genome_idx] /= species_size  # fitness sharing
+		for species in self.species.values():
+			species_size = len(species)
+			for genome in species:
+				genome.fitness /= species_size  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -150,8 +161,8 @@ class NEAT:
 		"""
 		avg_species_fitness_scores = []
 
-		for genome_indexes in self.species.values():
-			_fitness_scores = [self.fitness_scores[i] for i in genome_indexes]
+		for species in self.species.values():
+			_fitness_scores = [genome.fitness for genome in species]
 			avg_fitness = sum(_fitness_scores) / len(_fitness_scores)
 			avg_species_fitness_scores.append(avg_fitness)
 
@@ -195,30 +206,17 @@ class NEAT:
 			Args:
 				offspring_rates (list): how many survivors to select for each species
 		"""
-		new_population = []
-		new_fitness_scores = []
-		new_species = {}
-		new_pop_count = 0
-
 		for i, offspring_rate in enumerate(offspring_rates):
 			# get genome and fitness scores of each member in species
-			species_population = [self.population[i] for i in self.species[i]]
-			species_fitness = [self.fitness_scores[i] for i in self.species[i]]
+			species_population = self.species[i]
+			species_fitness = [genome.fitness for genome in species_population]
 
 			# select members from the species for next generation
-			_population, _fitness = selected_genomes = self.selection_fn(species_population, species_fitness, offspring_rate)
-
-			# add survivors to new generation
-			new_population += _population
-			new_fitness_scores += _fitness
+			selected_genomes = self.selection_fn(species_population, species_fitness, offspring_rate)
 
 			# add survivors back into species
-			new_species[i] = [j for j in range(new_pop_count, len(_population))]
-			new_pop_count += len(_population)
+			self.species[i] = selected_genomes
 
-		self.population = new_population
-		self.fitness_scores = new_fitness_scores
-		self.species = new_species
 
 
 	def crossover(self):
@@ -238,17 +236,16 @@ class NEAT:
 				offspring (list): list of offspring Genomes to be speciated
 		"""
 		num_parents = len(self.population)
-		for i, genome in enumerate(offspring):  # check each genome in the new offspring
-			genome_idx = num_parents + i
+		for genome in offspring:  # check each genome in the new offspring
 
 			for k in self.species.keys():  # check every species
 				first_genome = self.species[k][0]
-				dist = genome.compute_distance_score(self.population[first_genome])
+				dist = genome.compute_distance_score(first_genome)
 				if dist <= self.dist_threshold:
-					self.species[k].append(genome_idx)
+					self.species[k].append(genome)
 					break
 			else:  # couldnt find a species for the genome
-				self.species[self.current_species] = [genome_idx]  # create new species
+				self.species[self.current_species] = [genome]  # create new species
 				self.current_species += 1
 
 
@@ -325,8 +322,15 @@ class NEAT:
 	def get_best_chromosome(self):
 		""" Get the current best chromosome from the population
 		"""
-		best_idx = self.fitness_scores.index(max(self.fitness_scores))
-		return self.population[best_idx]
+		best_fitness = -1
+		best_genome = None
+		for species in self.species.values():
+			for genome in species:
+				if (fitness_score := genome.fitness) > best_fitness:
+					best_genome = genome
+					best_fitness = fitness_score
+
+		return best_genome
 
 
 	def show_best_performer(self):

@@ -93,7 +93,8 @@ class MultiEnvironment():
         env.reset()
         fitness_score = int(max_dist - (step/10))  # reward travelling more distance in less steps
         fitness_score = max(0, fitness_score)
-        return (model, fitness_score)
+        model.fitness = fitness_score
+        #return (model, fitness_score)
 
 
     def run(self, population):
@@ -103,7 +104,4 @@ class MultiEnvironment():
                 population (list): the population of chromosomes
         """
         assert len(population) == len(self.envs)
-        results = run_parallel(self.get_fitness, self.envs, population)
-        chromosomes, fitness_scores = zip(*results)
-
-        return chromosomes, fitness_scores
+        run_parallel(self.get_fitness, self.envs, population)
