@@ -8,7 +8,7 @@ def main():
     # setup environment
     print("\nInitialising Environments...")
     model = NEAT(
-    	selection=selection.truncation_selection,
+    	selection=selection.roulette_wheel_selection,
         population_size=100,
 		env_name="SuperMarioBros-v0",
 		weight_mutation_rate=0.8,

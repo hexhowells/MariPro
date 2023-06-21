@@ -102,6 +102,8 @@ class NEAT:
 				coefficient3=self.coefficient3)
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
+			
+			[genome.mutate_node() for _ in range(14)]
 
 			self.population.append(genome)
 
@@ -132,8 +134,14 @@ class NEAT:
 				yield genome
 
 
-	def population_size(self):
-		return len(self.get_population())
+	def get_population_with_species(self):
+		for species_id, species in self.species.items():
+			for genome in species:
+				yield (genome, species_id)
+
+
+	def get_population_size(self):
+		return len(list(self.get_population()))
 
 
 	def evaluate_population(self):
@@ -200,22 +208,19 @@ class NEAT:
 		return num_offspring
 
 
-	def selection(self, offspring_rates):
+	def selection(self):
 		""" Apply a selection function to select survivors for the next generation
-
-			Args:
-				offspring_rates (list): how many survivors to select for each species
 		"""
-		for i, offspring_rate in enumerate(offspring_rates):
-			# get genome and fitness scores of each member in species
-			species_population = self.species[i]
-			species_fitness = [genome.fitness for genome in species_population]
-
-			# select members from the species for next generation
-			selected_genomes = self.selection_fn(species_population, species_fitness, offspring_rate)
-
-			# add survivors back into species
-			self.species[i] = selected_genomes
+		population_with_species_id = list(self.get_population_with_species())
+		species_fitness = [genome.fitness for (genome, _) in population_with_species_id]
+		selected_genomes = self.selection_fn(population_with_species_id, species_fitness, self.survival_rate)
+		
+		self.species = {}
+		for genome, species_id in selected_genomes:
+			if species_id in self.species:
+				self.species[species_id].append(genome)
+			else:
+				self.species[species_id] = [genome]
 
 
 	def cull_species(self):
@@ -234,7 +239,7 @@ class NEAT:
 		for species_pop in self.species.values():
 			pass
 		# select 2 parents from a species
-		# call the crossover function you literally already wrote you idiot
+		# call the crossover function
 		# crossover(p1, p2, f1, f2)
 		# species with higher average fitness should breed more offspring
 		#   (could utilise offspring_rates maybe)
@@ -269,15 +274,19 @@ class NEAT:
 
 
 	def simulate_generation(self):
+		print(list(self.species.keys()), [len(v) for v in self.species.values()])
 		self.evaluate_population()
 		self.fitness_sharing()
+
+		self.selection()
+		print(list(self.species.keys()), [len(v) for v in self.species.values()])
+		self.cull_species()
+		print(list(self.species.keys()), [len(v) for v in self.species.values()])
 
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
-
-		self.selection(offspring_rates)
-		self.cull_species()
+		print(f'{avg_species_fitness=}\n{offspring_rates=}')
 
 		new_offspring = self.crossover()
 
