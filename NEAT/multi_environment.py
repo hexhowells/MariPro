@@ -103,5 +103,5 @@ class MultiEnvironment():
             Args:
                 population (list): the population of chromosomes
         """
-        assert len(population) == len(self.envs)
+        assert len(population) == len(self.envs), f'population size [{len(population)}] does not match environment size [{len(self.envs)}]'
         run_parallel(self.get_fitness, self.envs, population)
