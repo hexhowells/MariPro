@@ -12,6 +12,7 @@ import copy
 from multi_environment import MultiEnvironment
 import utils
 from genome import Genome
+from crossover import crossover as crossover_fn
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -169,10 +170,10 @@ class NEAT:
 		"""
 		avg_species_fitness_scores = []
 
-		for species in self.species.values():
+		for species_id, species in self.species.items():
 			_fitness_scores = [genome.fitness for genome in species]
 			avg_fitness = sum(_fitness_scores) / len(_fitness_scores)
-			avg_species_fitness_scores.append(avg_fitness)
+			avg_species_fitness_scores.append((species_id, avg_fitness))
 
 		return avg_species_fitness_scores
 
@@ -181,13 +182,13 @@ class NEAT:
 		""" Get total adjusted fitness scores for each species
 
 			Args:
-				avg_fitness_scores (list): average fitness scores for each species
+				avg_fitness_scores (list): (species id, average fitness scores for each species)
 		"""
 		adj_fitness_scores = []
 
-		for i, avg_fitness in enumerate(avg_fitness_scores):
-			adj_fitness = avg_fitness / len(self.species[i]) * self.culling_factor
-			adj_fitness_scores.append(avg_fitness)
+		for (species_id, avg_fitness) in avg_fitness_scores:
+			adj_fitness = avg_fitness / len(self.species[species_id]) * self.culling_factor
+			adj_fitness_scores.append((species_id, avg_fitness))
 
 		return adj_fitness_scores
 
@@ -196,14 +197,20 @@ class NEAT:
 		""" Get offspring rates for each species
 
 			Args:
-				adj_fitness_scores (list): adjusted fitness scores for each species
+				adj_fitness_scores (list): (species id, adjusted fitness scores for each species)
 		"""
-		total_adj_fitness = sum(adj_fitness_scores)
-		num_offspring = []
+		total_adj_fitness = sum([score[1] for score in adj_fitness_scores])
+		num_offspring = {}
+		num_new_offspring = self.population_size - self.get_population_size()
 
-		for adj_fitness in adj_fitness_scores:
-			offspring = adj_fitness * self.survival_rate / total_adj_fitness
-			num_offspring.append(offspring)
+		for (species_id, adj_fitness) in adj_fitness_scores:
+			offspring = num_new_offspring * (adj_fitness / total_adj_fitness)
+			num_offspring[species_id] = int(offspring)
+
+		species_ids = list(num_offspring.keys())
+		remaining_offspring = num_new_offspring - sum(num_offspring.values())
+		for _ in range(remaining_offspring):
+			num_offspring[random.choice(species_ids)] += 1
 
 		return num_offspring
 
@@ -235,14 +242,15 @@ class NEAT:
 			self.species.pop(species_id, None)
 
 
-	def crossover(self):
-		for species_pop in self.species.values():
-			pass
-		# select 2 parents from a species
-		# call the crossover function
-		# crossover(p1, p2, f1, f2)
-		# species with higher average fitness should breed more offspring
-		#   (could utilise offspring_rates maybe)
+	def crossover(self, offspring_rates):
+		offspring = []
+		for species_id, species in self.species.items():
+			for _ in range(offspring_rates[species_id]):
+				parent1, parent2 = random.sample(species, 2)
+				child = crossover_fn(parent1, parent2)
+				offspring.append(child)
+				
+		return offspring
 
 
 	def speciation(self, offspring):
@@ -274,21 +282,17 @@ class NEAT:
 
 
 	def simulate_generation(self):
-		print(list(self.species.keys()), [len(v) for v in self.species.values()])
 		self.evaluate_population()
 		self.fitness_sharing()
 
 		self.selection()
-		print(list(self.species.keys()), [len(v) for v in self.species.values()])
 		self.cull_species()
-		print(list(self.species.keys()), [len(v) for v in self.species.values()])
 
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
-		print(f'{avg_species_fitness=}\n{offspring_rates=}')
 
-		new_offspring = self.crossover()
+		new_offspring = self.crossover(offspring_rates)
 
 		self.speciation(new_offspring)
 		self.structural_mutation()
