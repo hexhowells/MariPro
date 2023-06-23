@@ -9,7 +9,7 @@ def main():
     print("\nInitialising Environments...")
     model = NEAT(
     	selection=selection.roulette_wheel_selection,
-        population_size=100,
+        population_size=200,
 		env_name="SuperMarioBros-v0",
 		weight_mutation_rate=0.8,
 		weight_random_rate=0.1,
@@ -36,9 +36,11 @@ def main():
         print(f"\nGeneration: {generation} / {generations}")
         model.simulate_generation()
 
-        best_generation_fitness = max(model.fitness_scores)
+        fitness_scores = [genome.fitness for genome in model.get_population()]
 
-        print(f'Best 5 fitnesses for generation: {sorted(model.fitness_scores, reverse=True)[:5]}')
+        best_generation_fitness = max(fitness_scores)
+        
+        print(f'Best 5 fitnesses for generation: {sorted(fitness_scores, reverse=True)[:5]}')
         print(f'Average fitness for generation: {model.average_fitness_score}')
         
         if best_generation_fitness > best_fitness:
