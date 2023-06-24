@@ -248,6 +248,7 @@ class NEAT:
 			for _ in range(offspring_rates[species_id]):
 				parent1, parent2 = random.sample(species, 2)
 				child = crossover_fn(parent1, parent2)
+				child.fitness = (parent1.fitness + parent2.fitness) / 2
 				offspring.append(child)
 				
 		return offspring
