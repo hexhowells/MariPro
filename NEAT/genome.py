@@ -100,17 +100,21 @@ class Genome:
 			Args:
 				x (array): array/list storing the values of the inputs
 		"""
-		def accumulate_connections(node):
+		def accumulate_connections(node, visited):
 			value = 0
 			for connection in node.connections:
 				in_node = self.node_genes[connection.in_node]
+				if in_node in visited:
+					continue
+				else:
+					visited.append(in_node)
 				if len(in_node.connections) == 0:
 					if in_node.ref != None:  # found hidden node without any inbound nodes
 						value += x[in_node.ref] * connection.weight
 					else:
 						value = 0
 				else:
-					value += accumulate_connections(in_node)
+					value += accumulate_connections(in_node, visited)
 
 			return utils.sigmoid(value)
 
@@ -119,7 +123,7 @@ class Genome:
 		
 		final_output = []
 		for out_node in output_nodes:
-			final_output.append(accumulate_connections(out_node))
+			final_output.append(accumulate_connections(out_node, []))
 
 		return final_output
 
@@ -173,6 +177,21 @@ class Genome:
 					self.connect_genes.append(connection)
 					self.node_genes[n_out].add_connection(connection)
 					return
+
+
+	def mutate_weight(self, mutation_rate, random_rate):
+		""" Mutate connection weights
+
+			Args:
+				mutation_rate (float): rate at which each weight get mutated
+				random_rate (float): rate at which mutated weight gets assigned a new random value
+		"""
+		for con in self.connect_genes:
+			if random.random() < mutation_rate:
+				if random.random() < random_rate:
+					con.weight = random.uniform(-1, 1)
+				else:
+					con.weight += random.uniform(0.1, -0.1)
 
 
 	def get_non_matching_genes(self, genome):
