@@ -4,23 +4,29 @@ from model import NEAT
 import selection
 
 
+def compute_variance(values):
+    mean = sum(values) / len(values)
+    squared_diffs = [(x - mean) ** 2 for x in values]
+    variance = sum(squared_diffs) / len(values)
+    return int(variance)
+
+
 def main():
     # setup environment
     print("\nInitialising Environments...")
     model = NEAT(
-    	selection=selection.truncation_selection,
-        population_size=200,
+    	selection=selection.elitist_selection,
+        population_size=300,
 		env_name="SuperMarioBros-v0",
 		weight_mutation_rate=0.8,
 		weight_random_rate=0.1,
-		gene_disabled_rate=0.75,
+		gene_disabled_rate=0.4,
 		crossover_rate=0.75,
-		interspecies_mating_rate=0.001,
-		new_node_rate=0.03,
-		new_link_rate=0.05,
-		coefficient1=1,
-		coefficient2=1,
-		coefficient3=1
+		new_node_rate=0.5,
+		new_link_rate=0.25,
+		coefficient1=2.0,
+		coefficient2=0.4,
+		coefficient3=1.0
 		)
 
 
@@ -37,11 +43,14 @@ def main():
         model.simulate_generation()
 
         fitness_scores = [round(genome.fitness, 2) for genome in model.get_population()]
+        connection_sizes = [len(genome.connect_genes) for genome in model.get_population()]
 
         best_generation_fitness = max(fitness_scores)
         
         print(f'Best 5 fitnesses for generation: {sorted(fitness_scores, reverse=True)[:5]}')
         print(f'Average fitness for generation: {model.average_fitness_score}')
+        print(f'Variance of fitness for generation: {compute_variance(fitness_scores)}')
+        print(f'Average number of connections: {(sum(connection_sizes) / len(connection_sizes))}')
         
         print("Species Information")
         sorted_items = sorted(model.species.items(), key=lambda item: len(item[1]), reverse=True)
@@ -54,7 +63,6 @@ def main():
             best_fitness = best_generation_fitness
             model.show_best_performer()
 
-        input("")
 
 
 if __name__ == "__main__":
