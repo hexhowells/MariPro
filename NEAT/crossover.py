@@ -17,10 +17,10 @@ def crossover(parent1, parent2):
 		node_len = len(parent2.node_genes)
 
 	for dc in disjoint_genes:
-		connect_genes.append(dc)
+		connect_genes.append(deepcopy(dc))
 	
 	for ec in excess_genes:
-		connect_genes.append(ec)
+		connect_genes.append(deepcopy(ec))
 
 	offspring = Genome(parent1.sensor_num, parent1.output_num, innovation=max_innov)
 	offspring.initialise_nodes()
