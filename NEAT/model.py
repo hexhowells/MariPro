@@ -51,7 +51,7 @@ class NEAT:
 		new_node_rate=0.03,
 		new_link_rate=0.05,
 		dist_threshold=0.3,
-		culling_factor=1.0,
+		culling_factor=1,
 		coefficient1=1,
 		coefficient2=1,
 		coefficient3=1
@@ -84,7 +84,7 @@ class NEAT:
 		self.culling_factor = culling_factor
 
 		self.input_size = (13 * 16) + 1
-		self.init_connection_size = 10
+		self.init_connection_size = 3
 		self.output_size = len(SIMPLE_MOVEMENT)
 
 		self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
@@ -104,7 +104,7 @@ class NEAT:
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
 			
-			[genome.mutate_node() for _ in range(14)]
+			#[genome.mutate_node() for _ in range(14)]
 
 			self.population.append(genome)
 
@@ -162,7 +162,7 @@ class NEAT:
 		for species in self.species.values():
 			species_size = len(species)
 			for genome in species:
-				genome.fitness /= species_size  # fitness sharing
+				genome.fitness /= species_size * 0.2  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -274,17 +274,32 @@ class NEAT:
 				self.current_species += 1
 
 
-	def structural_mutation(self):
-		pass
+	def structural_mutation(self, population):
+		""" Mutate node or connection genes
+		"""
+		for genome in population:
+			if random.random() < self.new_node_rate:
+				genome.mutate_node()
+
+			if random.random() < self.new_link_rate:
+				genome.mutate_connection()
+
+		return population
 
 
-	def weight_mutation(self):
-		pass
+	def weight_mutation(self, population):
+		""" Mutate connection weights in genome
+		"""
+		for genome in population:
+			genome.mutate_weight(self.weight_mutation_rate, self.weight_random_rate)
+
+		return population
 
 
 	def simulate_generation(self):
 		self.evaluate_population()
-		self.fitness_sharing()
+		self.show_best_performer()
+		#self.fitness_sharing()
 
 		self.selection()
 		self.cull_species()
@@ -294,10 +309,12 @@ class NEAT:
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
 
 		new_offspring = self.crossover(offspring_rates)
+		new_offspring = self.structural_mutation(new_offspring)
+		new_offspring = self.weight_mutation(new_offspring)
 
 		self.speciation(new_offspring)
-		self.structural_mutation()
-		self.weight_mutation()
+
+		self.evaluate_population()
 
 
 	def simulate(self, model):
@@ -309,6 +326,7 @@ class NEAT:
 		self.env.reset()
 		self.env.unwrapped.ram[1882] = 0  # set Mario's life counter to 0 to only allow one try
 		action = 1
+		max_dist = 0
 		prev_x_pos = 0
 		stood_still_count = 0
 
@@ -341,9 +359,14 @@ class NEAT:
 		    time.sleep(0.01)
 
 		    if done or info['flag_get']: # cut-off simulation
-		        break  
+		        break 
+
+		    max_dist = max(max_dist, info['x_pos'])
 
 		self.env.viewer.close()
+		fitness_score = int(max_dist - (step/10))  # reward travelling more distance in less steps
+		fitness_score = max(0, fitness_score)
+		print("fitness score: ", fitness_score)
 
 
 	def get_best_chromosome(self):
