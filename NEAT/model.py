@@ -50,6 +50,8 @@ class NEAT:
 		interspecies_mating_rate=0.001,
 		new_node_rate=0.03,
 		new_link_rate=0.05,
+		weight_disable_rate=0.4,
+		weight_enable_rate=0.2,
 		dist_threshold=0.3,
 		culling_factor=1,
 		coefficient1=1,
@@ -71,6 +73,9 @@ class NEAT:
 		self.interspecies_mating_rate = interspecies_mating_rate
 		self.new_node_rate = new_node_rate
 		self.new_link_rate = new_link_rate
+
+		self.weight_disable_rate = weight_disable_rate
+		self.weight_enable_rate = weight_enable_rate
 
 		self.coefficient1 = coefficient1
 		self.coefficient2 = coefficient2
@@ -162,7 +167,7 @@ class NEAT:
 		for species in self.species.values():
 			species_size = len(species)
 			for genome in species:
-				genome.fitness /= species_size * 0.2  # fitness sharing
+				genome.fitness /= species_size * 0.25  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -260,7 +265,7 @@ class NEAT:
 			Args:
 				offspring (list): list of offspring Genomes to be speciated
 		"""
-		num_parents = len(self.population)
+		num_parents = self.get_population_size()
 		for genome in offspring:  # check each genome in the new offspring
 
 			for k in self.species.keys():  # check every species
@@ -291,15 +296,18 @@ class NEAT:
 		""" Mutate connection weights in genome
 		"""
 		for genome in population:
-			genome.mutate_weight(self.weight_mutation_rate, self.weight_random_rate)
+			genome.mutate_weight(
+				self.weight_mutation_rate, 
+				self.weight_random_rate, 
+				self.weight_disable_rate,
+				self.weight_enable_rate)
 
 		return population
 
 
 	def simulate_generation(self):
 		self.evaluate_population()
-		self.show_best_performer()
-		#self.fitness_sharing()
+		self.fitness_sharing()
 
 		self.selection()
 		self.cull_species()

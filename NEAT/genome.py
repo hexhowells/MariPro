@@ -179,7 +179,7 @@ class Genome:
 					return
 
 
-	def mutate_weight(self, mutation_rate, random_rate):
+	def mutate_weight(self, mutation_rate, random_rate, disable_rate, enable_rate):
 		""" Mutate connection weights
 
 			Args:
@@ -192,6 +192,12 @@ class Genome:
 					con.weight = random.uniform(-1, 1)
 				else:
 					con.weight += random.uniform(0.1, -0.1)
+
+				if random.random() < disable_rate:
+					con.enabled = False
+
+				if random.random() < enable_rate:
+					con.enabled = True
 
 
 	def get_non_matching_genes(self, genome):
