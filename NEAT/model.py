@@ -89,7 +89,7 @@ class NEAT:
 		self.culling_factor = culling_factor
 
 		self.input_size = (13 * 16) + 1
-		self.init_connection_size = 3
+		self.init_connection_size = 8
 		self.output_size = len(SIMPLE_MOVEMENT)
 
 		self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
@@ -167,7 +167,7 @@ class NEAT:
 		for species in self.species.values():
 			species_size = len(species)
 			for genome in species:
-				genome.fitness /= species_size * 0.25  # fitness sharing
+				genome.fitness = genome.fitness / (species_size * 0.25)  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -250,8 +250,11 @@ class NEAT:
 	def crossover(self, offspring_rates):
 		offspring = []
 		for species_id, species in self.species.items():
+			fitness_scores = [genome.fitness for genome in species]
+			probs = np.asarray(fitness_scores) / sum(fitness_scores)
+
 			for _ in range(offspring_rates[species_id]):
-				parent1, parent2 = random.sample(species, 2)
+				parent1, parent2 = np.random.choice(species, size=2, replace=False, p=probs)
 				child = crossover_fn(parent1, parent2)
 				child.fitness = (parent1.fitness + parent2.fitness) / 2
 				offspring.append(child)
@@ -307,7 +310,7 @@ class NEAT:
 
 	def simulate_generation(self):
 		self.evaluate_population()
-		self.fitness_sharing()
+		#self.fitness_sharing()
 
 		self.selection()
 		self.cull_species()
@@ -315,6 +318,7 @@ class NEAT:
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
+		[print(f'> species {species_id} rate: {rate}') for species_id, rate in offspring_rates.items()]
 
 		new_offspring = self.crossover(offspring_rates)
 		new_offspring = self.structural_mutation(new_offspring)
