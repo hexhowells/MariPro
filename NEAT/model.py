@@ -167,7 +167,7 @@ class NEAT:
 		for species in self.species.values():
 			species_size = len(species)
 			for genome in species:
-				genome.fitness = genome.fitness / (species_size * 0.25)  # fitness sharing
+				genome.fitness = genome.fitness / (species_size * 1)  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -310,7 +310,7 @@ class NEAT:
 
 	def simulate_generation(self):
 		self.evaluate_population()
-		#self.fitness_sharing()
+		self.fitness_sharing()
 
 		self.selection()
 		self.cull_species()
