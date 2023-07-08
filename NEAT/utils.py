@@ -10,7 +10,7 @@ def sigmoid(x):
     Args:
         x (float): number to pass through the activation function
     """
-    return 1 / (1 + math.exp(-x))
+    return 1 / (1 + math.exp(-4.9 * x))
 
 
 def draw_hitboxes(screen, hitboxes):
