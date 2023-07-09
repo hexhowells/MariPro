@@ -89,7 +89,7 @@ class NEAT:
 		self.culling_factor = culling_factor
 
 		self.input_size = (13 * 16) + 1
-		self.init_connection_size = 8
+		self.init_connection_size = 10
 		self.output_size = len(SIMPLE_MOVEMENT)
 
 		self.env = JoypadSpace(gym_super_mario_bros.make(env_name), SIMPLE_MOVEMENT)
@@ -108,8 +108,6 @@ class NEAT:
 				coefficient3=self.coefficient3)
 			genome.initialise_nodes()
 			genome.initialise_connections(self.init_connection_size)
-			
-			#[genome.mutate_node() for _ in range(14)]
 
 			self.population.append(genome)
 
@@ -167,7 +165,7 @@ class NEAT:
 		for species in self.species.values():
 			species_size = len(species)
 			for genome in species:
-				genome.fitness = genome.fitness / (species_size * 1)  # fitness sharing
+				genome.fitness -= genome.fitness * (species_size / self.population_size)  # fitness sharing
 
 
 	def get_average_species_fitness(self):
@@ -254,10 +252,14 @@ class NEAT:
 			probs = np.asarray(fitness_scores) / sum(fitness_scores)
 
 			for _ in range(offspring_rates[species_id]):
-				parent1, parent2 = np.random.choice(species, size=2, replace=False, p=probs)
-				child = crossover_fn(parent1, parent2)
-				child.fitness = (parent1.fitness + parent2.fitness) / 2
-				offspring.append(child)
+				if random.random() < 0.2:
+					parent = np.random.choice(species, size=1, replace=False, p=probs)[0]
+					offspring.append(copy.deepcopy(parent))
+				else:
+					parent1, parent2 = np.random.choice(species, size=2, replace=False, p=probs)
+					child = crossover_fn(parent1, parent2)
+					child.fitness = (parent1.fitness + parent2.fitness) / 2
+					offspring.append(child)
 				
 		return offspring
 
@@ -270,7 +272,6 @@ class NEAT:
 		"""
 		num_parents = self.get_population_size()
 		for genome in offspring:  # check each genome in the new offspring
-
 			for k in self.species.keys():  # check every species
 				first_genome = self.species[k][0]
 				dist = genome.compute_distance_score(first_genome)
@@ -289,7 +290,7 @@ class NEAT:
 			if random.random() < self.new_node_rate:
 				genome.mutate_node()
 
-			if random.random() < self.new_link_rate:
+			elif random.random() < self.new_link_rate:
 				genome.mutate_connection()
 
 		return population
