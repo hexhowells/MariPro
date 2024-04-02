@@ -1,4 +1,7 @@
-# Mari/Pro
+<p align="center">
+  <img src="https://github.com/hexhowells/MariPro/blob/main/banner.png" width=70%>
+</p>
+
 Learning to play Super Mario Bros with AI
 
 Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) for emulating the game.
