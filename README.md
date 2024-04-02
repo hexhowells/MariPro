@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/hexhowells/MariPro/blob/main/banner.png" width=70%>
+  <img src="https://github.com/hexhowells/MariPro/blob/main/banner.png" width=80%>
 </p>
 
 Learning to play Super Mario Bros with AI
