@@ -85,7 +85,7 @@ This modified fitness function therefore scales an organism's fitness score (spe
 
 ## Minimizing Dimensionality
 
-Since its harder to find optimal solutions in larger networks due to a bigger search space, NEAT aims to minimize the dimensionality of the models, biasing towards networks with the fewest weights required.
+Since it's harder to find optimal solutions in larger networks due to a bigger search space, NEAT aims to minimize the dimensionality of the models, biasing towards networks with the fewest weights required.
 
 This is done by initialising the population with zero hidden weights, connecting the inputs directly to the outputs. Nodes and connections are then incrementally added to the network during mutation, with only the most useful connections surviving, this helps reduce model size and thus search space, making convergence much more efficient.
 
