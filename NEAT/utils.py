@@ -180,8 +180,9 @@ def get_input_screen(ram):
 def print_species_information(species):
     sorted_items = sorted(species.items(), key=lambda item: len(item[1]), reverse=True)
 
+    print('\t\tpopulation size\t   average fitness\t max fitness')
     for k, v in sorted_items:
         species_fitness_scores = [g.fitness for g in v]
         avg_fitness = round( sum(species_fitness_scores) / len(v), 1 )
         if len(v) > 1:
-            print(f'>>  species {k}: {len(v)}   \t{avg_fitness}\t{round(max(species_fitness_scores), 1)}')
+            print(f'  species {k}: \t{len(v)}\t\t   {avg_fitness}\t\t\t {round(max(species_fitness_scores), 1)}')
