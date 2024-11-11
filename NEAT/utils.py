@@ -175,3 +175,13 @@ def get_input_screen(ram):
         grid[e_row][e_col] = -1
 
     return grid
+
+
+def print_species_information(species):
+    sorted_items = sorted(species.items(), key=lambda item: len(item[1]), reverse=True)
+
+    for k, v in sorted_items:
+        species_fitness_scores = [g.fitness for g in v]
+        avg_fitness = round( sum(species_fitness_scores) / len(v), 1 )
+        if len(v) > 1:
+            print(f'>>  species {k}: {len(v)}   \t{avg_fitness}\t{round(max(species_fitness_scores), 1)}')

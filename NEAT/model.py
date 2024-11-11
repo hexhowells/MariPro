@@ -314,8 +314,14 @@ class NEAT:
 		self.evaluate_population()
 		self.fitness_sharing()
 
+		print("\nInternal Species Information")
+		utils.print_species_information(self.species)
+
 		self.selection()
 		self.cull_species()
+
+		print("\nSpecies Information after Selection and Culling")
+		utils.print_species_information(self.species)
 
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
