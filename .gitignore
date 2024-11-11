@@ -3,6 +3,9 @@
 __pycache__/
 data/
 wandb/
+other/
 Evolution-v2/
 sequences.txt
+models/
 *.pth
+
