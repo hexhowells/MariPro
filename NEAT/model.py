@@ -320,6 +320,8 @@ class NEAT:
 		avg_species_fitness = self.get_average_species_fitness()
 		adj_species_fitness = self.get_total_adjusted_fitness(avg_species_fitness)
 		offspring_rates = self.get_offspring_rates(adj_species_fitness)
+
+		print("\nOffspring Rates for each Species")
 		[print(f'> species {species_id} rate: {rate}') for species_id, rate in offspring_rates.items()]
 
 		new_offspring = self.crossover(offspring_rates)
