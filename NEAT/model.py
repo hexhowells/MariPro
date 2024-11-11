@@ -253,7 +253,7 @@ class NEAT:
 			probs = np.asarray(fitness_scores) / sum(fitness_scores)
 
 			for _ in range(offspring_rates[species_id]):
-				if random.random() < 0.2:
+				if random.random() < 0.05:
 					parent = np.random.choice(species, size=1, replace=False, p=probs)[0]
 					offspring.append(copy.deepcopy(parent))
 				else:
