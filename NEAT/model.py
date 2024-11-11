@@ -8,6 +8,7 @@ import warnings
 import numpy as np
 import torch
 import copy
+import pickle
 
 from multi_environment import MultiEnvironment
 import utils
@@ -401,3 +402,37 @@ class NEAT:
 		"""
 		best_chromosome = self.get_best_chromosome()
 		self.simulate(best_chromosome)
+
+
+	def save(self, filepath):
+		""" Save population and species data to a file
+
+			Args:
+                filepath (str): filepath to save the model data
+		"""
+		data = {
+			'population': self.population,
+			'species': self.species,
+			'current_species': self.current_species
+		}
+
+		with open(filepath, 'wb') as f:
+			pickle.dump(data, f)
+
+		print(f'Model saved to {filepath}')
+
+
+	def load(self, filepath):
+		""" Load the population and species data from a file
+
+			Args:
+                model (str): filepath of the saved model data
+		"""
+		with open(filepath, 'rb') as f:
+			data = pickle.load(f)
+
+		self.population = data['population']
+		self.species = data['species']
+		self.current_species = data['current_species']
+
+		print(f'Model loaded from {filepath}')
