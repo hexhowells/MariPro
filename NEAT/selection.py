@@ -40,7 +40,7 @@ def roulette_wheel_selection(population, fitness_scores, survival_rate):
 	return new_population
 
 
-def elitist_selection(population, fitness_scores, survival_rate, topk=3):
+def elitist_selection(population, fitness_scores, survival_rate, topk=5):
 	""" Roulette wheel selection function with elitist selection
 
 		Args:
