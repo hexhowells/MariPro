@@ -2,6 +2,8 @@ from genome import Genome
 import numpy as np
 from model import NEAT
 import selection
+import node_types as types
+import utils
 
 
 def compute_variance(values):
@@ -29,7 +31,6 @@ def main():
 		coefficient3=1.0
 		)
 
-
     model.initialise_population()
     model.initialise_species()
 
@@ -39,29 +40,33 @@ def main():
 
     # begin simulation
     for generation in range(generations):
+        print("-" * 90)
         print(f"\nGeneration: {generation} / {generations}")
         model.simulate_generation()
 
         fitness_scores = [round(genome.fitness, 2) for genome in model.get_population()]
-        connection_sizes = [len(genome.connect_genes) for genome in model.get_population()]
+        num_connections = [sum([1 if con.enabled else 0 for con in genome.connect_genes]) for genome in model.get_population()]
+        num_nodes = [sum([1 if (node.type == types.HIDDEN) else 0 for node in genome.node_genes]) for genome in model.get_population()]
 
         best_generation_fitness = max(fitness_scores)
+        fitness_variance = compute_variance(fitness_scores)
+        avg_num_connections = round((sum(num_connections) / len(num_connections)), 1)
+        avg_num_nodes = round((sum(num_nodes) / len(num_nodes)), 1)
         
-        print(f'Best 5 fitnesses for generation: {sorted(fitness_scores, reverse=True)[:5]}')
+        print(f'\nBest 5 fitnesses for generation: {sorted(fitness_scores, reverse=True)[:5]}')
         print(f'Average fitness for generation: {model.average_fitness_score}')
-        print(f'Variance of fitness for generation: {compute_variance(fitness_scores)}')
-        print(f'Average number of connections: {(sum(connection_sizes) / len(connection_sizes))}')
-        
-        print("Species Information")
-        sorted_items = sorted(model.species.items(), key=lambda item: len(item[1]), reverse=True)
-        for k, v in sorted_items:
-            species_fitness_scores = [g.fitness for g in v]
-            avg_fitness = round( sum(species_fitness_scores) / len(v), 1 )
-            print(f'  species {k}: {len(v)}   \t{avg_fitness}\t{round(max(species_fitness_scores), 1)}')
-        
+        print(f'Variance of fitness for generation: {fitness_variance}')
+        print(f'Average number of enabled connections: {avg_num_connections}')
+        print(f'Average number of nodes: {avg_num_nodes}')
+
+        print("\nSpecies Information")
+        utils.print_species_information(model.species)
+
         if best_generation_fitness > best_fitness:
             best_fitness = best_generation_fitness
+        
             model.show_best_performer()
+        model.save(f"models/best_of_generation_{generation}")
 
 
 
