@@ -23,9 +23,11 @@ def main():
 		weight_mutation_rate=0.8,
 		weight_random_rate=0.1,
 		gene_disabled_rate=0.4,
+        weight_disable_rate=0.6,
 		crossover_rate=0.75,
 		new_node_rate=0.5,
 		new_link_rate=0.25,
+        dist_threshold=0.4,
 		coefficient1=2.0,
 		coefficient2=0.4,
 		coefficient3=1.0
