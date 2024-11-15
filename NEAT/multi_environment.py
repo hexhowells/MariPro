@@ -40,6 +40,11 @@ class MultiEnvironment():
         self.reset()
 
 
+    def __del__(self):
+        for env in self.envs:
+            env.close()
+
+
     def reset(self):
         """ Reset all environments """
         for env in self.envs:
@@ -94,7 +99,7 @@ class MultiEnvironment():
         fitness_score = int(max_dist - (step/10))  # reward travelling more distance in less steps
         fitness_score = max(1, fitness_score)
         model.fitness = fitness_score
-        #return (model, fitness_score)
+        
 
 
     def run(self, population):
@@ -105,3 +110,4 @@ class MultiEnvironment():
         """
         assert len(population) == len(self.envs), f'population size [{len(population)}] does not match environment size [{len(self.envs)}]'
         run_parallel(self.get_fitness, self.envs, population)
+
