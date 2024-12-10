@@ -12,9 +12,9 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - Heuristic Based
 - Evolutionary Learning
 - Neuroevolution
+- NEAT
 
 ### TODO
-- NEAT
 - Immitation Learning
 - REINFORCE
 - Reinforcement Learning (DQN, DDQN, etc)
