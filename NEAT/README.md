@@ -1,4 +1,4 @@
-# NEAT (IN PROGRESS)
+# NEAT
 
 NeuroEvolution of Augmenting Topologies (NEAT) expands on neuroevolution by adding evolving network topologies along side evolving network weights. This method aims to solve the *Competing Conventions Problem* by enabling effective crossover of neuroevolution systems without destroying useful information and structures.
 
