@@ -15,9 +15,16 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - NEAT
 
 ### TODO
-- Immitation Learning
+- DQN
+- DDQN
+- Dueling DQN
+- Prioritized Experience Replay
 - REINFORCE
-- Reinforcement Learning (DQN, DDQN, etc)
+- Proximal policy optimization
+- Deep Deterministic Policy Gradient
+- Soft Actor-Critic
+- Intrinsic Curiosity Module
+- Random Network Distillation
 - MuZero
 
 ---
