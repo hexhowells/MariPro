@@ -3,7 +3,7 @@ from torch import nn
 
 
 class QNetwork(nn.Module):
-	def __init__(self, in_channels=4, actions=7):
+	def __init__(self, in_channels=12, actions=7):
 		super().__init__()
 
 		self.features = nn.Sequential(
