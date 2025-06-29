@@ -1,6 +1,11 @@
-from nes_py.wrappers import JoypadSpace
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-import gym
+# from nes_py.wrappers import JoypadSpace
+# from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+# import gym
+import ale_py
+import gymnasium as gym
+
+import wandb
+
 
 from collections import deque
 
@@ -9,16 +14,23 @@ import torchvision.transforms as T
 
 from model import QNetwork
 from frame_buffer import FrameBuffer
-from env import Environment
-from utils import epsilon_greedy, create_minibatch
+from env import Environment, Breakout
+from utils import epsilon_greedy, create_minibatch, evaluate
 import hyperparameters as hp
 
+from tqdm import tqdm
 
 
 # create environment
-_env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
-_env = JoypadSpace(_env, SIMPLE_MOVEMENT)
-env = Environment(_env)
+# _env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+# _env = JoypadSpace(_env, SIMPLE_MOVEMENT)
+# env = Environment(_env)
+
+#_env = gym.make('Breakout-v0', render_mode="rgb_array")
+gym.register_envs(ale_py)
+_env = gym.make("ALE/Breakout-v5")
+env = Breakout(_env)
+hp.action_space = _env.action_space.n
 
 # create policy and target networks
 policy_net = QNetwork(hp.in_channels, hp.action_space).to(device='cuda')
@@ -27,7 +39,8 @@ target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
 # set hyperparameters
-criterion = torch.nn.MSELoss()
+criterion = torch.nn.SmoothL1Loss()  # Huber loss
+#criterion = torch.nn.MSELoss()
 optimiser = torch.optim.Adam(policy_net.parameters(), lr=hp.lr)
 
 transform = T.Compose([
@@ -39,11 +52,22 @@ transform = T.Compose([
 
 steps = 0
 best_score = 0
+epsilon = hp.epsilon
 replay_buffer = deque(maxlen=hp.replay_memory_size)
+eval_score = evaluate(env, policy_net, transform)
+episode = 1
+
+pbar = tqdm(total = hp.total_steps)
+
+wandb.init(
+    project="breakout-dqn",
+    config={k: v for k, v in hp.__dict__.items() if not k.startswith("__")},
+)
 
 
-for episode in range(hp.num_episodes):
-    print(f'\nStarting epidode: {episode}')
+while steps <= hp.total_steps:
+    #print(f'\nEpisode: {episode:,}')
+    episode += 1
 
     # reset environment and get first state
     first_frame, *_ = env.reset()
@@ -57,11 +81,12 @@ for episode in range(hp.num_episodes):
 
     while not done:
         steps += 1
+        
         # sample the action with epsilon-greedy
-        action = epsilon_greedy(policy_net, state, hp.epsilon)
+        action = epsilon_greedy(policy_net, state, epsilon)
 
         # execute action
-        next_frame, reward, done = env.step_n_times(action, hp.action_repeats)
+        next_frame, reward, done = env.step(action)
 
         frame_stack.append(next_frame)
 
@@ -69,18 +94,23 @@ for episode in range(hp.num_episodes):
         replay_buffer.append((state, action, reward, frame_stack.state(), done))
 
         # dont train until replay buffer fits a single batch
-        if len(replay_buffer) <= hp.batch_size:
+        if len(replay_buffer) <= hp.replay_start_size:
+            episode = 0
+            steps = 0
             continue
+
+        pbar.update(1)
 
         # update q-network
         if (steps % hp.update_frequency) == 0:
-            states, actions, targets = create_minibatch(replay_buffer, target_net)
-            q_values = policy_net(states.to(device='cuda')).cpu().gather(1, actions).squeeze()
+            states, actions, targets = create_minibatch(replay_buffer, policy_net, target_net)
+            q_values = policy_net(states.to(device='cuda')).gather(1, actions).squeeze()
 
             loss = criterion(q_values, targets)
 
             optimiser.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=1.0)  # gradient clipping
             optimiser.step()
             losses.append(loss.detach().item())
 
@@ -88,14 +118,27 @@ for episode in range(hp.num_episodes):
         if (steps % hp.target_update_frequency) == 0:
             target_net.load_state_dict(policy_net.state_dict())
 
-    # decay epsilon
-    if hp.epsilon > hp.epsilon_min:
-        hp.epsilon *= hp.epsilon_decay
+        if (steps % 25_000) == 0:
+            eval_score = evaluate(env, policy_net, transform)
+
+        # decay epsilon
+        if epsilon != hp.epsilon_min:
+            epsilon = max(hp.epsilon_min, hp.epsilon - (hp.epsilon - hp.epsilon_min) * (steps / hp.epsilon_decay_steps))
 
     if len(losses) > 0:
-        print(f'  Average loss: {(sum(losses) / len(losses)):.2f}.')
-        print(f'  Total reward: {env.total_reward:.2f}.  Current epsilon: {hp.epsilon:.2f}')
-        print(f'  Max x-position: {env.high_score}')
+        #print(f'  Average loss: {(sum(losses) / len(losses)):.4f}. Steps: {steps:,}')
+        #print(f'  Total reward: {env.total_reward:.2f}.  Current epsilon: {epsilon:.3f}')
+        #print(f'  Points gained: {env.high_score}. Last eval score: {eval_score}')
+
+        wandb.log({
+            "episode": episode,
+            "average_loss": sum(losses) / len(losses),
+            "total_reward": env.total_reward,
+            "epsilon": epsilon,
+            "eval_score": eval_score,
+            "steps": steps,
+            "high_score": env.high_score
+        }, step=steps)
 
         # save model on new high score
         if env.high_score > best_score:

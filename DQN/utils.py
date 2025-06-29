@@ -1,6 +1,8 @@
 import hyperparameters as hp
 import random
 import torch
+from frame_buffer import FrameBuffer
+import numpy as np
 
 
 
@@ -15,38 +17,42 @@ def epsilon_greedy(policy_net, frame, epsilon):
     return action
 
 
-def compute_reward(state, target_net):
-    (frame, action, reward, next_frame, done) = state
-    if done:
-        return reward
-    else:
-        with torch.no_grad():
-            target_q_value = target_net(next_frame.to(device='cuda')).max(1)[0]
-
-        return reward + hp.discount_factor * target_q_value
-
-
-def sample_buffer(replay_buffer, target_net):
+def create_minibatch(replay_buffer, policy_net, target_net):
+    # sample from replay buffer
     transitions = random.sample(replay_buffer, hp.batch_size)
-    minibatch = []
 
-    for transition in transitions:
-        state = transition[0][0]  # extra [0] to remove an extra dimension
-        action = transition[1]
-        reward = compute_reward(transition, target_net)
+    # extract from minibatch transitions
+    frames = torch.stack([t[0].squeeze(0) for t in transitions]).to('cuda')
+    actions = torch.LongTensor([t[1] for t in transitions]).unsqueeze(1).to('cuda')
+    rewards = torch.FloatTensor([t[2] for t in transitions]).to('cuda')
+    next_frames = torch.stack([t[3].squeeze(0) for t in transitions]).to('cuda')
+    dones = torch.BoolTensor([t[4] for t in transitions]).to('cuda')
 
-        minibatch.append((state, action, reward))
+    # Double DQN logic
+    next_q_actions = policy_net(next_frames).argmax(dim=1, keepdim=True)
+    next_q_values = target_net(next_frames).gather(1, next_q_actions).squeeze(1)
 
-    return minibatch
+    # compute target
+    targets = torch.where(dones, torch.tensor(-1.0, device='cuda'), rewards + hp.gamma * next_q_values)
+
+    return frames, actions, targets
 
 
-def create_minibatch(replay_buffer, target_net):
-    minibatch = sample_buffer(replay_buffer, target_net)
+def evaluate(env, policy, transform, n_episodes=5):
+    rewards = []
+    
+    with torch.no_grad():
+        for _ in range(n_episodes):
+            obs, _ = env.reset()
+            fb = FrameBuffer(obs, hp.history_len, transform)
+            done, ep_r = False, 0
 
-    states, actions, targets = zip(*minibatch)
+            while not done:
+                a = epsilon_greedy(policy, fb.state(), epsilon=0.05)
+                obs, r, done = env.step(a)
+                fb.append(obs)
+                ep_r += r
+            rewards.append(ep_r)
+    
+    return np.mean(rewards)
 
-    states = torch.stack(states)
-    actions = torch.LongTensor(actions).unsqueeze(1)
-    targets = torch.Tensor(targets)
-
-    return states, actions, targets

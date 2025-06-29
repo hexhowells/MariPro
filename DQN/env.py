@@ -37,18 +37,70 @@ class Environment:
 
 
 	def step_n_times(self, action, n):
-	    reward_history = []
+		reward_history = []
 
-	    for _ in range(n):
-	        next_frame, reward, terminated, truncated, _ = self.step(action)
-	        reward_history.append(reward)
+		for _ in range(n):
+			next_frame, reward, terminated, truncated, _ = self.step(action)
+			reward_history.append(reward)
 
-	        if terminated or truncated or self._not_moved():
-	            self.done = True
-	            break
+			if terminated or truncated or self._not_moved():
+				self.done = True
+				break
 
-	    avg_reward = sum(reward_history) / len(reward_history)
+		avg_reward = sum(reward_history) / len(reward_history)
 
-	    self.total_reward += avg_reward
+		self.total_reward += avg_reward
 
-	    return next_frame, avg_reward, self.done
+		return next_frame, avg_reward, self.done
+
+
+class Breakout:
+	def __init__(self, env):
+		self.env = env
+		self.total_reward = 0
+		self.high_score = 0
+		self.lives = 0 
+
+
+	def reset(self):
+		obs, info = self.env.reset()
+		self.total_reward = 0
+		self.high_score = 0
+		self.lives = info.get('lives', 0)
+
+		return obs, info
+
+
+	def step(self, action):
+		obs, reward, terminated, truncated, info = self.env.step(action)
+
+		done = terminated or truncated
+		
+		# track current lives
+		current_lives = info.get('lives', self.lives)
+		if current_lives < self.lives:
+			reward = -1 
+		self.lives = current_lives
+
+		if done:
+			reward = -1
+		
+		self.total_reward += reward
+		if reward > 0:
+			self.high_score += reward
+
+		return obs, reward, done
+
+
+	def step_n_times(self, action, n):
+		total_reward = 0
+		done = False
+		obs = None
+
+		for _ in range(n):
+			obs, reward, done = self.step(action)
+			total_reward += reward
+			if done:
+				break
+
+		return obs, total_reward, done
