@@ -26,10 +26,13 @@ from tqdm import tqdm
 # _env = JoypadSpace(_env, SIMPLE_MOVEMENT)
 # env = Environment(_env)
 
-#_env = gym.make('Breakout-v0', render_mode="rgb_array")
 gym.register_envs(ale_py)
 _env = gym.make("ALE/Breakout-v5")
 env = Breakout(_env)
+
+_env_eval = gym.make("ALE/Breakout-v5")
+env_eval = Breakout(_env)
+
 hp.action_space = _env.action_space.n
 
 # create policy and target networks
@@ -40,8 +43,7 @@ target_net.eval()
 
 # set hyperparameters
 criterion = torch.nn.SmoothL1Loss()  # Huber loss
-#criterion = torch.nn.MSELoss()
-optimiser = torch.optim.Adam(policy_net.parameters(), lr=hp.lr)
+optimiser = torch.optim.Adam(policy_net.parameters(), lr=hp.lr, eps=1e-4)
 
 transform = T.Compose([
     T.ToPILImage(),
@@ -54,7 +56,7 @@ steps = 0
 best_score = 0
 epsilon = hp.epsilon
 replay_buffer = deque(maxlen=hp.replay_memory_size)
-eval_score = evaluate(env, policy_net, transform)
+eval_score = evaluate(env_eval, policy_net, transform)
 episode = 1
 
 pbar = tqdm(total = hp.total_steps)
@@ -66,7 +68,6 @@ wandb.init(
 
 
 while steps <= hp.total_steps:
-    #print(f'\nEpisode: {episode:,}')
     episode += 1
 
     # reset environment and get first state
@@ -74,13 +75,15 @@ while steps <= hp.total_steps:
 
     # store last N frames in state
     frame_stack = FrameBuffer(first_frame, hp.history_len, transform)
-    state = frame_stack.state()
 
     done = False
     losses = []
 
     while not done:
         steps += 1
+
+        # create state
+        state = frame_stack.state()
         
         # sample the action with epsilon-greedy
         action = epsilon_greedy(policy_net, state, epsilon)
@@ -110,7 +113,7 @@ while steps <= hp.total_steps:
 
             optimiser.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=1.0)  # gradient clipping
+            #torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=1.0)  # gradient clipping
             optimiser.step()
             losses.append(loss.detach().item())
 
@@ -118,18 +121,18 @@ while steps <= hp.total_steps:
         if (steps % hp.target_update_frequency) == 0:
             target_net.load_state_dict(policy_net.state_dict())
 
-        if (steps % 25_000) == 0:
-            eval_score = evaluate(env, policy_net, transform)
+        if (steps % hp.eval_steps) == 0:
+            eval_score = evaluate(env_eval, policy_net, transform)
 
         # decay epsilon
         if epsilon != hp.epsilon_min:
             epsilon = max(hp.epsilon_min, hp.epsilon - (hp.epsilon - hp.epsilon_min) * (steps / hp.epsilon_decay_steps))
 
-    if len(losses) > 0:
-        #print(f'  Average loss: {(sum(losses) / len(losses)):.4f}. Steps: {steps:,}')
-        #print(f'  Total reward: {env.total_reward:.2f}.  Current epsilon: {epsilon:.3f}')
-        #print(f'  Points gained: {env.high_score}. Last eval score: {eval_score}')
+        # save model
+        if (steps % hp.checkpoint_steps) == 0:
+            torch.save(policy_net.state_dict(), f"models/model_{steps}.pth")
 
+    if len(losses) > 0:
         wandb.log({
             "episode": episode,
             "average_loss": sum(losses) / len(losses),
@@ -137,10 +140,4 @@ while steps <= hp.total_steps:
             "epsilon": epsilon,
             "eval_score": eval_score,
             "steps": steps,
-            "high_score": env.high_score
         }, step=steps)
-
-        # save model on new high score
-        if env.high_score > best_score:
-            best_score = env.high_score
-            torch.save(policy_net.state_dict(), f"models/model_{episode}.pth")

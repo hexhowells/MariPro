@@ -1,4 +1,5 @@
 from collections import deque
+import random
 
 
 class Environment:
@@ -64,10 +65,11 @@ class Breakout:
 
 	def reset(self):
 		obs, info = self.env.reset()
+
 		self.total_reward = 0
 		self.high_score = 0
 		self.lives = info.get('lives', 0)
-
+		
 		return obs, info
 
 
@@ -79,7 +81,7 @@ class Breakout:
 		# track current lives
 		current_lives = info.get('lives', self.lives)
 		if current_lives < self.lives:
-			reward = -1 
+			reward = -1
 		self.lives = current_lives
 
 		if done:

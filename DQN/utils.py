@@ -29,8 +29,12 @@ def create_minibatch(replay_buffer, policy_net, target_net):
     dones = torch.BoolTensor([t[4] for t in transitions]).to('cuda')
 
     # Double DQN logic
-    next_q_actions = policy_net(next_frames).argmax(dim=1, keepdim=True)
+    with torch.no_grad():
+       next_q_actions = policy_net(next_frames).argmax(dim=1, keepdim=True)
     next_q_values = target_net(next_frames).gather(1, next_q_actions).squeeze(1)
+
+    # DQN logic
+    #next_q_values = target_net(next_frames).argmax(dim=1, keepdim=True).squeeze(1)
 
     # compute target
     targets = torch.where(dones, torch.tensor(-1.0, device='cuda'), rewards + hp.gamma * next_q_values)
@@ -40,19 +44,21 @@ def create_minibatch(replay_buffer, policy_net, target_net):
 
 def evaluate(env, policy, transform, n_episodes=5):
     rewards = []
-    
+
     with torch.no_grad():
         for _ in range(n_episodes):
             obs, _ = env.reset()
-            fb = FrameBuffer(obs, hp.history_len, transform)
-            done, ep_r = False, 0
+            frame_buffer = FrameBuffer(obs, hp.history_len, transform)
+            done, ep_reward = False, 0
 
             while not done:
-                a = epsilon_greedy(policy, fb.state(), epsilon=0.05)
-                obs, r, done = env.step(a)
-                fb.append(obs)
-                ep_r += r
-            rewards.append(ep_r)
+                action = epsilon_greedy(policy, frame_buffer.state(), epsilon=0.05)
+                obs, reward, done = env.step(action)
+                
+                frame_buffer.append(obs)
+                ep_reward += reward
+
+            rewards.append(ep_reward)
     
     return np.mean(rewards)
 
