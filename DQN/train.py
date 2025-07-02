@@ -14,6 +14,7 @@ import torchvision.transforms as T
 
 from model import QNetwork
 from frame_buffer import FrameBuffer
+from replay_buffer import ReplayBuffer
 from env import Environment, Breakout
 from utils import epsilon_greedy, create_minibatch, evaluate
 import hyperparameters as hp
@@ -55,7 +56,7 @@ transform = T.Compose([
 steps = 0
 best_score = 0
 epsilon = hp.epsilon
-replay_buffer = deque(maxlen=hp.replay_memory_size)
+replay_buffer = ReplayBuffer(size=hp.replay_memory_size)# deque(maxlen=hp.replay_memory_size)
 eval_score = evaluate(env_eval, policy_net, transform)
 episode = 1
 

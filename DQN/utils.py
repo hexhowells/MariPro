@@ -19,7 +19,7 @@ def epsilon_greedy(policy_net, frame, epsilon):
 
 def create_minibatch(replay_buffer, policy_net, target_net):
     # sample from replay buffer
-    transitions = random.sample(replay_buffer, hp.batch_size)
+    transitions = replay_buffer.sample(hp.batch_size)# random.sample(replay_buffer, hp.batch_size)
 
     # extract from minibatch transitions
     frames = torch.stack([t[0].squeeze(0) for t in transitions]).to('cuda')
