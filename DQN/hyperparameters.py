@@ -6,7 +6,7 @@ action_space = 4
 
 # Training Parameters
 batch_size = 32
-lr = 1e-5  # 0.00001
+lr = 1e-4  # 0.00001
 gamma = 0.99
 update_frequency = 4
 target_update_frequency = 10_000
