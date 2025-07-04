@@ -149,6 +149,7 @@ while steps <= hp.total_steps:
             "episode": episode,
             "average_loss": sum(losses) / len(losses),
             "total_reward": env.total_reward,
+            "distance": env.high_score,
             "epsilon": epsilon,
             "eval_score": eval_score,
             "steps": steps,
