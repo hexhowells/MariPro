@@ -13,12 +13,13 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - Evolutionary Learning
 - Neuroevolution
 - NEAT
-
-### TODO
 - DQN
 - DDQN
-- Dueling DQN
 - Prioritized Experience Replay
+
+### TODO
+
+- Dueling DQN
 - REINFORCE
 - Proximal policy optimization
 - Deep Deterministic Policy Gradient
