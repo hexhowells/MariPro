@@ -1,5 +1,6 @@
 from collections import deque
 import random
+import numpy as np
 
 
 class Environment:
@@ -7,20 +8,20 @@ class Environment:
 		self.env = env
 		self.x_history = deque([-1], maxlen=60)
 		self.high_score = 0
-		self.done = False
 		self.total_reward = 0
+		self.done = False
 
 
 	def reset(self):
 		self.x_history = deque([-1], maxlen=60)
 		self.high_score = 0
-		self.done = False
 		self.total_reward = 0
+		self.done = False
 
 		return self.env.reset()
 
 
-	def step(self, action):
+	def _step(self, action):
 		state, reward, terminated, truncated, info = self.env.step(action)
 		self._update_high_score(info['x_pos'])
 		self.x_history.append(info['x_pos'])
@@ -37,11 +38,12 @@ class Environment:
 			self.high_score = x_pos
 
 
-	def step_n_times(self, action, n):
+	def step(self, action, n=4):
 		reward_history = []
 
 		for _ in range(n):
-			next_frame, reward, terminated, truncated, _ = self.step(action)
+			
+			next_frame, reward, terminated, truncated, _ = self._step(action)
 			reward_history.append(reward)
 
 			if terminated or truncated or self._not_moved():
@@ -49,6 +51,7 @@ class Environment:
 				break
 
 		avg_reward = sum(reward_history) / len(reward_history)
+		avg_reward = np.clip(avg_reward, -1, 1)
 
 		self.total_reward += avg_reward
 
@@ -92,17 +95,3 @@ class Breakout:
 			self.high_score += reward
 
 		return obs, reward, done
-
-
-	def step_n_times(self, action, n):
-		total_reward = 0
-		done = False
-		obs = None
-
-		for _ in range(n):
-			obs, reward, done = self.step(action)
-			total_reward += reward
-			if done:
-				break
-
-		return obs, total_reward, done

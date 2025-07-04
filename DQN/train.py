@@ -1,8 +1,8 @@
-# from nes_py.wrappers import JoypadSpace
-# from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-# import gym
-import ale_py
-import gymnasium as gym
+from nes_py.wrappers import JoypadSpace
+from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+import gym
+#import ale_py
+#import gymnasium as gym
 
 import wandb
 
@@ -13,7 +13,6 @@ import torch
 import torchvision.transforms as T
 
 from model import QNetwork
-from frame_buffer import FrameBuffer
 from replay_buffer import ReplayBuffer
 from env import Environment, Breakout
 from utils import epsilon_greedy, create_minibatch, evaluate
@@ -23,16 +22,21 @@ from tqdm import tqdm
 
 
 # create environment
-# _env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
-# _env = JoypadSpace(_env, SIMPLE_MOVEMENT)
-# env = Environment(_env)
+_env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+_env = JoypadSpace(_env, SIMPLE_MOVEMENT)
+env = Environment(_env)
 
-gym.register_envs(ale_py)
-_env = gym.make("ALE/Breakout-v5")
-env = Breakout(_env)
+_env_eval = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+_env_eval = JoypadSpace(_env_eval, SIMPLE_MOVEMENT)
+env_eval = Environment(_env_eval)
 
-_env_eval = gym.make("ALE/Breakout-v5")
-env_eval = Breakout(_env)
+
+# gym.register_envs(ale_py)
+# _env = gym.make("ALE/Breakout-v5")
+# env = Breakout(_env)
+
+# _env_eval = gym.make("ALE/Breakout-v5")
+# env_eval = Breakout(_env)
 
 hp.action_space = _env.action_space.n
 
@@ -56,14 +60,20 @@ transform = T.Compose([
 steps = 0
 best_score = 0
 epsilon = hp.epsilon
-replay_buffer = ReplayBuffer(size=hp.replay_memory_size)# deque(maxlen=hp.replay_memory_size)
+replay_buffer = ReplayBuffer(
+    capacity=hp.replay_memory_size,
+    frame_stack=hp.history_len,
+    transform=transform
+    )
+
+# ReplayBuffer(size=hp.replay_memory_size)# deque(maxlen=hp.replay_memory_size)
 eval_score = evaluate(env_eval, policy_net, transform)
 episode = 1
 
 pbar = tqdm(total = hp.total_steps)
 
 wandb.init(
-    project="breakout-dqn",
+    project="mario-dqn",
     config={k: v for k, v in hp.__dict__.items() if not k.startswith("__")},
 )
 
@@ -73,9 +83,7 @@ while steps <= hp.total_steps:
 
     # reset environment and get first state
     first_frame, *_ = env.reset()
-
-    # store last N frames in state
-    frame_stack = FrameBuffer(first_frame, hp.history_len, transform)
+    replay_buffer.add_first_frame(first_frame)
 
     done = False
     losses = []
@@ -84,7 +92,7 @@ while steps <= hp.total_steps:
         steps += 1
 
         # create state
-        state = frame_stack.state()
+        state = replay_buffer.current_state()
         
         # sample the action with epsilon-greedy
         action = epsilon_greedy(policy_net, state, epsilon)
@@ -92,10 +100,8 @@ while steps <= hp.total_steps:
         # execute action
         next_frame, reward, done = env.step(action)
 
-        frame_stack.append(next_frame)
-
         # store transition in buffer
-        replay_buffer.append((state, action, reward, frame_stack.state(), done))
+        replay_buffer.append(next_frame, action, reward, done)
 
         # dont train until replay buffer fits a single batch
         if len(replay_buffer) <= hp.replay_start_size:
@@ -108,6 +114,7 @@ while steps <= hp.total_steps:
         # update q-network
         if (steps % hp.update_frequency) == 0:
             states, actions, targets = create_minibatch(replay_buffer, policy_net, target_net)
+
             q_values = policy_net(states.to(device='cuda')).gather(1, actions).squeeze()
 
             loss = criterion(q_values, targets)

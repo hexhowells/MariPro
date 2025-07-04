@@ -22,4 +22,3 @@ class FrameBuffer:
 	def state(self):
 		return self.stack_frames()
 
-

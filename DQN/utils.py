@@ -19,14 +19,7 @@ def epsilon_greedy(policy_net, frame, epsilon):
 
 def create_minibatch(replay_buffer, policy_net, target_net):
     # sample from replay buffer
-    transitions = replay_buffer.sample(hp.batch_size)# random.sample(replay_buffer, hp.batch_size)
-
-    # extract from minibatch transitions
-    frames = torch.stack([t[0].squeeze(0) for t in transitions]).to('cuda')
-    actions = torch.LongTensor([t[1] for t in transitions]).unsqueeze(1).to('cuda')
-    rewards = torch.FloatTensor([t[2] for t in transitions]).to('cuda')
-    next_frames = torch.stack([t[3].squeeze(0) for t in transitions]).to('cuda')
-    dones = torch.BoolTensor([t[4] for t in transitions]).to('cuda')
+    frames, actions, rewards, next_frames, dones = replay_buffer.sample(hp.batch_size)
 
     # Double DQN logic
     with torch.no_grad():
@@ -35,7 +28,7 @@ def create_minibatch(replay_buffer, policy_net, target_net):
 
     # DQN logic
     #next_q_values = target_net(next_frames).argmax(dim=1, keepdim=True).squeeze(1)
-
+    
     # compute target
     targets = torch.where(dones, torch.tensor(-1.0, device='cuda'), rewards + hp.gamma * next_q_values)
 
