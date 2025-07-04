@@ -1,6 +1,7 @@
 from collections import deque
 import random
 import torch
+import numpy as np
 
 
 class ReplayBuffer:
@@ -138,16 +139,20 @@ class PrioritisedReplayBuffer:
 
 	def compute_probabilities(self):
 		probs = self.priorities[:self.size]
-		return probs / probs.sum()
+		return (probs / probs.sum()).numpy()
 
 
 	def _sample_indices(self, probs, batch_size):
 		return np.random.choice(self.size, batch_size, replace=False, p=probs)
+
+
+	def update_priorities(self, indices, priorities):
+		self.priorities[indices] = priorities
 		
 
 	def sample(self, batch_size):
 		probs = self.compute_probabilities()
-		indices = self._sample_indices(batch_size)
+		indices = self._sample_indices(probs, batch_size)
 
 		states = torch.stack([self.stack_frames(i - 1) for i in indices]).to('cuda')
 		actions = self.actions[indices].unsqueeze(1).to('cuda')
@@ -155,10 +160,10 @@ class PrioritisedReplayBuffer:
 		dones = self.dones[indices].to('cuda')
 		next_states = torch.stack([self.stack_frames(i) for i in indices]).to('cuda')
 
-		weights = (sekf.size * torch.tensor(probs[indices])).pow(-self.beta)
-		weights = weights / weights.max().to('cuda')
+		weights = (self.size * torch.tensor(probs[indices])).pow(-self.beta)
+		weights = (weights / weights.max()).to('cuda')
 
-		return states, actions, rewards, next_states, dones, weights
+		return states, actions, rewards, next_states, dones, weights, indices
 
 
 	def __len__(self):

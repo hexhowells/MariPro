@@ -13,9 +13,9 @@ import torch
 import torchvision.transforms as T
 
 from model import QNetwork
-from replay_buffer import ReplayBuffer
+from replay_buffer import PrioritisedReplayBuffer
 from env import Environment, Breakout
-from utils import epsilon_greedy, create_minibatch, evaluate
+from utils import epsilon_greedy, compute_targets, evaluate
 import hyperparameters as hp
 
 from tqdm import tqdm
@@ -60,13 +60,12 @@ transform = T.Compose([
 steps = 0
 best_score = 0
 epsilon = hp.epsilon
-replay_buffer = ReplayBuffer(
+replay_buffer = PrioritisedReplayBuffer(
     capacity=hp.replay_memory_size,
     frame_stack=hp.history_len,
     transform=transform
     )
 
-# ReplayBuffer(size=hp.replay_memory_size)# deque(maxlen=hp.replay_memory_size)
 eval_score = evaluate(env_eval, policy_net, transform)
 episode = 1
 
@@ -101,7 +100,7 @@ while steps <= hp.total_steps:
         next_frame, reward, done = env.step(action)
 
         # store transition in buffer
-        replay_buffer.append(next_frame, action, reward, done)
+        replay_buffer.append(next_frame, action, reward, done, priority=1.0)
 
         # dont train until replay buffer fits a single batch
         if len(replay_buffer) <= hp.replay_start_size:
@@ -113,15 +112,20 @@ while steps <= hp.total_steps:
 
         # update q-network
         if (steps % hp.update_frequency) == 0:
-            states, actions, targets = create_minibatch(replay_buffer, policy_net, target_net)
+            #states, actions, targets, weights, indices = create_minibatch(replay_buffer, policy_net, target_net)
+            *transitions, weights, indices = replay_buffer.sample(hp.batch_size)
+            states, actions, _, _, _ = transitions
+            targets = compute_targets(policy_net, target_net, transitions)
 
             q_values = policy_net(states.to(device='cuda')).gather(1, actions).squeeze()
+
+            td_errors = (targets - q_values).abs()
+            replay_buffer.update_priorities(indices, td_errors.detach().cpu())
 
             loss = criterion(q_values, targets)
 
             optimiser.zero_grad()
             loss.backward()
-            #torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=1.0)  # gradient clipping
             optimiser.step()
             losses.append(loss.detach().item())
 
