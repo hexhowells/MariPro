@@ -17,9 +17,8 @@ def epsilon_greedy(policy_net, frame, epsilon):
     return action
 
 
-def create_minibatch(replay_buffer, policy_net, target_net):
-    # sample from replay buffer
-    frames, actions, rewards, next_frames, dones = replay_buffer.sample(hp.batch_size)
+def compute_targets(policy_net, target_net, transitions):
+    _, _, rewards, next_frames, dones = transitions
 
     # Double DQN logic
     with torch.no_grad():
@@ -28,11 +27,11 @@ def create_minibatch(replay_buffer, policy_net, target_net):
 
     # DQN logic
     #next_q_values = target_net(next_frames).argmax(dim=1, keepdim=True).squeeze(1)
-    
+
     # compute target
     targets = torch.where(dones, torch.tensor(-1.0, device='cuda'), rewards + hp.gamma * next_q_values)
 
-    return frames, actions, targets
+    return targets
 
 
 def evaluate(env, policy, transform, n_episodes=5):

@@ -9,45 +9,44 @@ class Environment:
 		self.x_history = deque([-1], maxlen=60)
 		self.high_score = 0
 		self.total_reward = 0
-		self.done = False
+		self.curr_lives = 2
 
 
 	def reset(self):
 		self.x_history = deque([-1], maxlen=60)
 		self.high_score = 0
 		self.total_reward = 0
-		self.done = False
 
 		return self.env.reset()
 
 
 	def _step(self, action):
 		state, reward, terminated, truncated, info = self.env.step(action)
-		self._update_high_score(info['x_pos'])
+		self.high_score = max(self.high_score, info['x_pos'])
 		self.x_history.append(info['x_pos'])
+
+		done = terminated or truncated or self._not_moved()
+
+		self.curr_lives = max(self.curr_lives, info['life'])
 		
-		return state, reward, terminated, truncated, info
+		return state, reward, done, info
 
 
 	def _not_moved(self):
 		return len(set(self.x_history)) <= 1
 
 
-	def _update_high_score(self, x_pos):
-		if x_pos > self.high_score:
-			self.high_score = x_pos
-
-
 	def step(self, action, n=4):
 		reward_history = []
+		done = False
 
 		for _ in range(n):
 			
-			next_frame, reward, terminated, truncated, _ = self._step(action)
+			next_frame, reward, done, _ = self._step(action)
 			reward_history.append(reward)
 
-			if terminated or truncated or self._not_moved():
-				self.done = True
+			if done:
+				done = True
 				break
 
 		avg_reward = sum(reward_history) / len(reward_history)
@@ -55,7 +54,7 @@ class Environment:
 
 		self.total_reward += avg_reward
 
-		return next_frame, avg_reward, self.done
+		return next_frame, avg_reward, done
 
 
 class Breakout:
