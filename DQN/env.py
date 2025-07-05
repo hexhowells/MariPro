@@ -22,10 +22,10 @@ class Environment:
 
 	def _step(self, action):
 		state, reward, terminated, truncated, info = self.env.step(action)
-		self.high_score = max(self.high_socre, info['x_pos'])
+		self.high_score = max(self.high_score, info['x_pos'])
 		self.x_history.append(info['x_pos'])
 
-		done = terminated or truncated or (info['life'] < self.curr_lives) or self._not_moved()
+		done = terminated or truncated or self._not_moved()
 
 		self.curr_lives = max(self.curr_lives, info['life'])
 		
@@ -49,12 +49,10 @@ class Environment:
 				done = True
 				break
 
-		reward_history = np.clip(reward_history, -1, 1)
-
 		avg_reward = sum(reward_history) / len(reward_history)
-		self.total_reward = avg_reward
+		avg_reward = np.clip(avg_reward, -1, 1)
 
-		if done: avg_reward = -1
+		self.total_reward += avg_reward
 
 		return next_frame, avg_reward, done
 
