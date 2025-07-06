@@ -27,6 +27,7 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - Intrinsic Curiosity Module
 - Random Network Distillation
 - MuZero
+- EfficientZero
 
 ---
 
