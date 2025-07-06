@@ -2,4 +2,4 @@
 
 # Double DQN
 
-# Prioritised Experiance Replay
+# Prioritised Experience Replay
