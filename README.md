@@ -20,6 +20,7 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 
 ### TODO
 - RainbowDQN
+- A3C
 - REINFORCE
 - Proximal policy optimization
 - Deep Deterministic Policy Gradient
