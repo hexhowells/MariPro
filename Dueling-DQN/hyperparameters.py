@@ -1,4 +1,5 @@
 # Environment & Input
+env_name = 'SuperMarioBros-v0'#'SuperMarioBrosRandomStages-v0'
 frame_size = 84
 history_len = 4
 in_channels = 4

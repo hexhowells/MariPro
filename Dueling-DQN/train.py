@@ -22,11 +22,11 @@ from tqdm import tqdm
 
 
 # create environment
-_env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+_env = gym.make(hp.env_name, apply_api_compatibility=True, render_mode="rgb_array")
 _env = JoypadSpace(_env, SIMPLE_MOVEMENT)
 env = Environment(_env)
 
-_env_eval = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+_env_eval = gym.make(hp.env_name, apply_api_compatibility=True, render_mode="rgb_array")
 _env_eval = JoypadSpace(_env_eval, SIMPLE_MOVEMENT)
 env_eval = Environment(_env_eval)
 
