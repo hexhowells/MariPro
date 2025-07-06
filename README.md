@@ -16,10 +16,10 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - DQN
 - DDQN
 - Prioritized Experience Replay
+- Dueling DQN
 
 ### TODO
-
-- Dueling DQN
+- RainbowDQN
 - REINFORCE
 - Proximal policy optimization
 - Deep Deterministic Policy Gradient
