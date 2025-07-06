@@ -36,6 +36,7 @@ def compute_targets(policy_net, target_net, transitions):
 
 def evaluate(env, policy, transform, n_episodes=5):
     rewards = []
+    best_dist = 0
 
     with torch.no_grad():
         for _ in range(n_episodes):
@@ -51,6 +52,8 @@ def evaluate(env, policy, transform, n_episodes=5):
                 ep_reward += reward
 
             rewards.append(ep_reward)
+
+        best_dist = max(best_dist, env.high_score)
     
-    return np.mean(rewards)
+    return np.mean(rewards), best_dist
 

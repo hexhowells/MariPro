@@ -76,6 +76,8 @@ wandb.init(
     config={k: v for k, v in hp.__dict__.items() if not k.startswith("__")},
 )
 
+eval_dist = 0
+
 
 while steps <= hp.total_steps:
     episode += 1
@@ -134,7 +136,7 @@ while steps <= hp.total_steps:
             target_net.load_state_dict(policy_net.state_dict())
 
         if (steps % hp.eval_steps) == 0:
-            eval_score = evaluate(env_eval, policy_net, transform)
+            eval_score, eval_dist = evaluate(env_eval, policy_net, transform)
 
         # decay epsilon
         if epsilon != hp.epsilon_min:
@@ -150,6 +152,7 @@ while steps <= hp.total_steps:
             "average_loss": sum(losses) / len(losses),
             "total_reward": env.total_reward,
             "distance": env.high_score,
+            "eval_distance": eval_dist,
             "epsilon": epsilon,
             "eval_score": eval_score,
             "steps": steps,
