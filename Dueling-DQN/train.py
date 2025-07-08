@@ -114,7 +114,6 @@ while steps <= hp.total_steps:
 
         # update q-network
         if (steps % hp.update_frequency) == 0:
-            #states, actions, targets, weights, indices = create_minibatch(replay_buffer, policy_net, target_net)
             *transitions, weights, indices = replay_buffer.sample(hp.batch_size)
             states, actions, _, _, _ = transitions
             targets = compute_targets(policy_net, target_net, transitions)
