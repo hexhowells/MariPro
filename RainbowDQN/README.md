@@ -1,1 +1,1 @@
-# Dueling DQN
+# Rainbow DQN
