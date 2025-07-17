@@ -13,7 +13,7 @@ Typically the model used for DQN is a convolutional network to process image dat
 
 ## Loss function
 ```math
-Loss =  \left( r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right)^2
+\large Loss =  \left( r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right)^2
 ```
 Where:
 
@@ -47,4 +47,42 @@ Experience replay buffers store the last N transitions (e.g 1,000,000 transition
 
 # Double DQN
 
+When updaing the q-values for a DQN, we construct our target value based on the maximum expected reward given the action space of a given state. 
+
+```math
+\large r + \gamma \max_{a'} Q(s', a')
+```
+
+An issue with this is that it can lead to over-estimation bias since the same network is chosing the best action and evaluating the value of the state-action pair. A simple solution to this is Double DQN. This method decouples the action selection and the action evaluation when computing the target values. In DDQN, instead of using the above to compute the target, we use the below:
+
+```math
+\large r + \gamma Q(s', arg \max_{a'} Q(s', a'))
+```
+
+Here we use the Q-network to select the best action given a state, but we use the target network to evaluate the expected reward of the state-action pair. Since the target network is offline and updated less frequently than the online Q-network, it helps reduce the overestimation and stabalises training.
+
 # Prioritised Experience Replay
+
+In the vanilla DQN implementation, experience replay is used to store the previous N transitions, and during each training step the experience replay is uniformly sampled. However, for environments with sparse rewards this can lead to many transitions with little reward (thus not very information rich) being sampled often, and more important transitions are rarely sampled.
+
+This was improved using prioritised experience replay. This method samples transitions that are more important more often based on how "surprising" the transition is. More formally we assign an initial priority of a transition to `1.0` so that it is sampled early. Once a transition has been sampled, the priority is updated according to the TD error
+
+```math
+\large p_i = |\delta_i| + \epsilon
+```
+
+where `ϵ` is a small constant to avoid the probability being zero. We can then sample from the buffer using the following probability
+
+```math
+\large P(i) = \frac{p_i^{\alpha}}{\sum_k p_k^{\alpha}}
+```
+
+Where `α` is how much prioritisation to use, where `α = 0` = uniform sampling & `α = 1` = full prioritisation.
+
+Since prioritised sampling introduces bias, we can compensate for this with IS weights during the gradient updates:
+
+```math
+w_i = \left( \frac{1}{N} \cdot \frac{1}{P(i)} \right)^\beta
+```
+
+Where `β ∈ [0,1]` controls the strength of correction.
