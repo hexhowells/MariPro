@@ -82,7 +82,14 @@ class ReplayBuffer:
 
 
 class PrioritisedReplayBuffer:
-	def __init__(self, capacity, frame_stack, transform):
+	def __init__(
+			self, 
+			capacity, 
+			frame_stack, 
+			transform,
+			n_step=3,
+			gamma=0.99
+		):
 		self.frame_stack = frame_stack
 		self.capacity = capacity + frame_stack
 		self.transform = transform
@@ -99,16 +106,50 @@ class PrioritisedReplayBuffer:
 		self.beta = 0.4
 		self.epsilon = 1e-6
 
+		self.n_step = n_step
+		self.gamma = gamma
+		self.n_step_buffer = deque(maxlen=n_step)
+
+
+
+	def _get_n_step_transition(self):
+		n_step_reward = 0
+
+		for i, (_, _, reward, _) in enumerate(self.n_step_buffer):
+			n_step_reward += (self.gamma ** i) * reward
+
+		state_index, action, _, _ = self.n_step_buffer[0]
+		_, _, _, done = self.n_step_buffer[-1]
+		_, _, _, next_index = self.n_step_buffer[-1]
+
+		return state_index, action, n_step_reward, done, next_index
+
+
 
 	def append(self, frame, action, reward, done, priority):
-		self.frames[self.p] = self.transform(frame)
-		self.actions[self.p] = action
-		self.rewards[self.p] = reward
-		self.dones[self.p] = done
-		self.priorities[self.p] = (abs(priority) + self.epsilon) ** self.alpha
+		index = self.p
+
+		self.frames[index] = self.transform(frame)
+		self.actions[index] = action
+		self.rewards[index] = reward
+		self.dones[index] = done
+		self.priorities[index] = (abs(priority) + self.epsilon) ** self.alpha
+
+		self.n_step_buffer.append((index, action, reward, done))
+
+		if len(self.n_step_buffer) == self.n_step or done:
+			state_index, action, n_step_reward, done_flag, next_index = self._get_n_step_transition()
+
+			# go back and update older transition slots now that N steps ahead have been captured
+			self.actions[state_index] = action
+			self.rewards[state_index] = n_step_reward
+			self.dones[state_index] = done_flag
 
 		self.p = (self.p + 1) % self.capacity
 		self.size = max(self.size, self.p)
+
+		if done:
+			self.n_step_buffer.clear()
 
 
 	def add_first_frame(self, frame):
@@ -158,7 +199,7 @@ class PrioritisedReplayBuffer:
 		actions = self.actions[indices].unsqueeze(1).to('cuda')
 		rewards = self.rewards[indices].to('cuda')
 		dones = self.dones[indices].to('cuda')
-		next_states = torch.stack([self.stack_frames(i) for i in indices]).to('cuda')
+		next_states = torch.stack([self.stack_frames((i + self.n_step - 1) % self.capacity) for i in indices]).to('cuda')
 
 		weights = (self.size * torch.tensor(probs[indices])).pow(-self.beta)
 		weights = (weights / weights.max()).to('cuda')
