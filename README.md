@@ -17,18 +17,18 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - DDQN
 - Prioritized Experience Replay
 - Dueling DQN
+- RainbowDQN
 
 ### TODO
-- RainbowDQN
-- A3C
-- REINFORCE
+- Intrinsic Curiosity Module
+- Random Network Distillation
 - Proximal policy optimization
 - Deep Deterministic Policy Gradient
 - Soft Actor-Critic
-- Intrinsic Curiosity Module
-- Random Network Distillation
 - MuZero
 - EfficientZero
+- A3C
+- REINFORCE
 
 ---
 
