@@ -6,16 +6,15 @@ import gym
 
 import wandb
 
-
 from collections import deque
 
 import torch
 import torchvision.transforms as T
 
-from model import DuelingDQN
+from model import DuelingDQN51
 from replay_buffer import PrioritisedReplayBuffer
 from env import Environment, Breakout
-from utils import epsilon_greedy, compute_targets, evaluate
+from utils import select_action, compute_targets, evaluate, projection_distribution
 import hyperparameters as hp
 
 from tqdm import tqdm
@@ -41,8 +40,8 @@ env_eval = Environment(_env_eval)
 hp.action_space = _env.action_space.n
 
 # create policy and target networks
-policy_net = DuelingDQN(hp.in_channels, hp.action_space).to(device='cuda')
-target_net = DuelingDQN(hp.in_channels, hp.action_space).to(device='cuda')
+policy_net = DuelingDQN51(hp.in_channels, hp.action_space).to(device='cuda')
+target_net = DuelingDQN51(hp.in_channels, hp.action_space).to(device='cuda')
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -51,20 +50,19 @@ criterion = torch.nn.SmoothL1Loss()  # Huber loss
 optimiser = torch.optim.Adam(policy_net.parameters(), lr=hp.lr, eps=1e-4)
 
 transform = T.Compose([
-    T.ToPILImage(),
-    T.Grayscale(1),
-    T.Resize((84, 84)),
-    T.ToTensor()
+	T.ToPILImage(),
+	T.Grayscale(1),
+	T.Resize((84, 84)),
+	T.ToTensor()
 ])
 
 steps = 0
 best_score = 0
-epsilon = hp.epsilon
 replay_buffer = PrioritisedReplayBuffer(
-    capacity=hp.replay_memory_size,
-    frame_stack=hp.history_len,
-    transform=transform
-    )
+	capacity=hp.replay_memory_size,
+	frame_stack=hp.history_len,
+	transform=transform
+	)
 
 eval_score = evaluate(env_eval, policy_net, transform)
 episode = 1
@@ -72,88 +70,102 @@ episode = 1
 pbar = tqdm(total = hp.total_steps)
 
 wandb.init(
-    project="mario-dqn",
-    config={k: v for k, v in hp.__dict__.items() if not k.startswith("__")},
+	project="mario-dqn",
+	config={k: v for k, v in hp.__dict__.items() if not k.startswith("__")},
 )
 
 eval_dist = 0
 
 
 while steps <= hp.total_steps:
-    episode += 1
+	episode += 1
 
-    # reset environment and get first state
-    first_frame, *_ = env.reset()
-    replay_buffer.add_first_frame(first_frame)
+	# reset environment and get first state
+	first_frame, *_ = env.reset()
+	replay_buffer.add_first_frame(first_frame)
 
-    done = False
-    losses = []
+	done = False
+	losses = []
 
-    while not done:
-        steps += 1
+	while not done:
+		steps += 1
 
-        # create state
-        state = replay_buffer.current_state()
-        
-        # sample the action with epsilon-greedy
-        action = epsilon_greedy(policy_net, state, epsilon)
+		# create state
+		state = replay_buffer.current_state()
+		
+		# sample the action
+		policy_net.reset_noise()
+		action = select_action(policy_net, state)
 
-        # execute action
-        next_frame, reward, done = env.step(action)
+		# execute action
+		next_frame, reward, done = env.step(action)
 
-        # store transition in buffer
-        replay_buffer.append(next_frame, action, reward, done, priority=1.0)
+		# store transition in buffer
+		replay_buffer.append(next_frame, action, reward, done, priority=1.0)
 
-        # dont train until replay buffer fits a single batch
-        if len(replay_buffer) <= hp.replay_start_size:
-            episode = 0
-            steps = 0
-            continue
+		# dont train until replay buffer fits a single batch
+		if len(replay_buffer) <= hp.replay_start_size:
+			episode = 0
+			steps = 0
+			continue
 
-        pbar.update(1)
+		pbar.update(1)
 
-        # update q-network
-        if (steps % hp.update_frequency) == 0:
-            #states, actions, targets, weights, indices = create_minibatch(replay_buffer, policy_net, target_net)
-            *transitions, weights, indices = replay_buffer.sample(hp.batch_size)
-            states, actions, _, _, _ = transitions
-            targets = compute_targets(policy_net, target_net, transitions)
+		# update q-network
+		if (steps % hp.update_frequency) == 0:
+			policy_net.reset_noise()
+			target_net.reset_noise()
+			
+			states, actions, rewards, next_states, dones, weights, indices = replay_buffer.sample(hp.batch_size)
 
-            q_values = policy_net(states.to(device='cuda')).gather(1, actions).squeeze()
+			with torch.no_grad():
+				next_probs = target_net(next_states)
+				next_q = torch.sum(next_probs * target_net.support, dim=2)
+				next_actions = next_q.argmax(1)
+				next_dist = next_probs[range(hp.batch_size), next_actions]
 
-            td_errors = (targets - q_values).abs()
-            replay_buffer.update_priorities(indices, td_errors.detach().cpu())
+				target_dist = projection_distribution(
+					next_dist,
+					rewards,
+					dones,
+					hp.gamma,
+					target_net.support,
+					target_net.v_min,
+					target_net.v_max,
+					target_net.atom_size
+				)
 
-            loss = criterion(q_values, targets)
+			probs = policy_net(states)
+			log_probs = torch.log(probs[range(hp.batch_size), actions.squeeze(1)])
 
-            optimiser.zero_grad()
-            loss.backward()
-            optimiser.step()
-            losses.append(loss.detach().item())
+			loss = -(target_dist * log_probs).sum(1)
+			loss = (loss * weights).mean()
 
-        # update target network
-        if (steps % hp.target_update_frequency) == 0:
-            target_net.load_state_dict(policy_net.state_dict())
+			replay_buffer.update_priorities(indices, loss.detach().cpu())
 
-        if (steps % hp.eval_steps) == 0:
-            eval_score, eval_dist = evaluate(env_eval, policy_net, transform)
+			optimiser.zero_grad()
+			loss.backward()
+			optimiser.step()
+			losses.append(loss.detach().item())
 
-        # decay epsilon
-        if epsilon != hp.epsilon_min:
-            epsilon = max(hp.epsilon_min, hp.epsilon - (hp.epsilon - hp.epsilon_min) * (steps / hp.epsilon_decay_steps))
+		# update target network
+		if (steps % hp.target_update_frequency) == 0:
+			target_net.load_state_dict(policy_net.state_dict())
 
-        # save model
-        if (steps % hp.checkpoint_steps) == 0:
-            torch.save(policy_net.state_dict(), f"models/model_{steps}.pth")
+		if (steps % hp.eval_steps) == 0:
+			eval_score, eval_dist = evaluate(env_eval, policy_net, transform)
 
-    if len(losses) > 0:
-        wandb.log({
-            "episode": episode,
-            "average_loss": sum(losses) / len(losses),
-            "total_reward": env.total_reward,
-            "distance": env.high_score,
-            "eval_distance": eval_dist,
-            "epsilon": epsilon,
-            "eval_score": eval_score,
-            "steps": steps,
-        }, step=steps)
+		# save model
+		if (steps % hp.checkpoint_steps) == 0:
+			torch.save(policy_net.state_dict(), f"models/model_{steps}.pth")
+
+	if len(losses) > 0:
+		wandb.log({
+			"episode": episode,
+			"average_loss": sum(losses) / len(losses),
+			"total_reward": env.total_reward,
+			"distance": env.high_score,
+			"eval_distance": eval_dist,
+			"eval_score": eval_score,
+			"steps": steps,
+		}, step=steps)
