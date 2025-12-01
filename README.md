@@ -20,14 +20,14 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - RainbowDQN
 
 ### TODO
-- Intrinsic Curiosity Module
-- Random Network Distillation
-- Proximal policy optimization
+- [A3C](https://arxiv.org/abs/1602.01783)
+- [Intrinsic Curiosity Module](https://arxiv.org/abs/1705.05363)
+- [Random Network Distillation](https://arxiv.org/abs/1810.12894)
+- [Proximal policy optimization](https://arxiv.org/abs/1707.06347)
+- [MuZero](https://arxiv.org/abs/1911.08265)
+- [EfficientZero](https://arxiv.org/abs/2111.00210)
 - Deep Deterministic Policy Gradient
 - Soft Actor-Critic
-- MuZero
-- EfficientZero
-- A3C
 - REINFORCE
 
 ---
