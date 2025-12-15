@@ -2,14 +2,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import ale_py
 import gymnasium as gym
 from model import ActorCritic
 from utils import make_env, render_policy
 
 
 def train(
-        env_id="CartPole-v1",
-        total_updates=5000,
+        env_id="ALE/Breakout-v5",
+        total_updates=100_000,
         num_envs=8,
         rollout_len=5,
         gamma=0.99,
@@ -24,12 +25,12 @@ def train(
 
     envs = gym.vector.SyncVectorEnv([make_env(env_id, seed + i) for i in range(num_envs)])
     obs, _ = envs.reset()
-
-    obs_dim = envs.single_observation_space.shape[0]
+    
+    obs_dim = envs.single_observation_space.shape
     act_dim = envs.single_action_space.n
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = ActorCritic(obs_dim, act_dim).to(device)
+    model = ActorCritic(actions=act_dim).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     for update in range(1, total_updates + 1):
@@ -46,7 +47,6 @@ def train(
             dist = torch.distributions.Categorical(logits=logits)
             actions = dist.sample()
             logp = dist.log_prob(actions)
-
             next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated)
 
@@ -77,7 +77,7 @@ def train(
         returns = torch.stack(returns).reshape(T * N)
         values = torch.stack(val_buf).reshape(T * N) 
         logps = torch.stack(logp_buf).reshape(T * N) 
-        obs_stack = torch.stack(obs_buf).reshape(T * N, obs_dim)
+        obs_stack = torch.stack(obs_buf).reshape(T * N, *obs_dim)
 
         advantages = returns - values
 
