@@ -1,15 +1,15 @@
+import os
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import ale_py
-import gymnasium as gym
+import gymnasium
 from model import ActorCritic
 from utils import make_env, render_policy
 
 
 def train(
-        env_id="ALE/Breakout-v5",
+        env_id="SuperMarioBros-v0",
         total_updates=100_000,
         num_envs=8,
         rollout_len=5,
@@ -23,7 +23,7 @@ def train(
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    envs = gym.vector.SyncVectorEnv([make_env(env_id, seed + i) for i in range(num_envs)])
+    envs = gymnasium.vector.SyncVectorEnv([make_env(env_id, seed + i) for i in range(num_envs)])
     obs, _ = envs.reset()
     
     obs_dim = envs.single_observation_space.shape
@@ -32,8 +32,11 @@ def train(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ActorCritic(actions=act_dim).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    
+    checkpoint_dir = "checkpoints"
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
-    for update in range(1, total_updates + 1):
+    for update in range(0, total_updates + 1):
         obs_buf = []
         logp_buf = []
         rew_buf = []
@@ -111,8 +114,18 @@ def train(
         if update % 500 == 0:
             eval_return = render_policy(model, env_id=env_id)
             print(f'{eval_return=}')
+        
+        if update % 1000 == 0:
+            checkpoint_path = f"{checkpoint_dir}/model_{update}.pth"
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Saved checkpoint: {checkpoint_path}")
 
     envs.close()
+    
+    final_checkpoint = f"{checkpoint_dir}/model_final.pth"
+    torch.save(model.state_dict(), final_checkpoint)
+    print(f"Saved final checkpoint: {final_checkpoint}")
+    
     return model
 
 
