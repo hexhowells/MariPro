@@ -1,11 +1,14 @@
 import os
 import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 import gymnasium
+
 from model import ActorCritic
-from utils import make_env, render_policy
+from utils import make_env
 
 
 def train(
@@ -112,10 +115,6 @@ def train(
                 f"ent={(-entropy_loss).item():.3f} "
                 f"Vmean={v_mean:.3f}"
             )
-        
-        if update % 500 == 0:
-            eval_return = render_policy(model, env_id=env_id)
-            print(f'{eval_return=}')
         
         if update % 1000 == 0:
             checkpoint_path = f"{checkpoint_dir}/model_{update}.pth"
