@@ -36,6 +36,7 @@ def train(
     checkpoint_dir = "checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
+    # begin training
     for update in range(0, total_updates + 1):
         obs_buf = []
         logp_buf = []
@@ -43,6 +44,7 @@ def train(
         done_buf = []
         val_buf = []
 
+        # compute rollout
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
             logits, values = model(obs_t)
@@ -92,7 +94,7 @@ def train(
         dist_flat = torch.distributions.Categorical(logits=logits_flat)
         entropy_loss = -dist_flat.entropy().mean()
 
-        loss = policy_loss + vf_coef * value_loss + (ent_coef * entropy_loss)
+        loss = policy_loss + (vf_coef * value_loss) + (ent_coef * entropy_loss)
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -125,8 +127,6 @@ def train(
     final_checkpoint = f"{checkpoint_dir}/model_final.pth"
     torch.save(model.state_dict(), final_checkpoint)
     print(f"Saved final checkpoint: {final_checkpoint}")
-    
-    return model
 
 
 if __name__ == "__main__":
