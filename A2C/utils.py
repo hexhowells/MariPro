@@ -13,8 +13,7 @@ import torchvision.transforms as T
 import numpy as np
 
 
-class ResetWrapper:
-    """Wrapper to ignore seed parameter in reset() for environments that don't support it"""
+class EnvWrapper:
     def __init__(self, env):
         self.env = env
     
@@ -22,7 +21,10 @@ class ResetWrapper:
         return self.env.reset()
     
     def step(self, action):
-        return self.env.step(action)
+        result = self.env.step(action)
+        obs, reward, terminated, truncated, info = result
+        reward = np.clip(reward, -1.0, 1.0)
+        return obs, reward, terminated, truncated, info
     
     def render(self, mode=None):
         return self.env.render()
@@ -38,7 +40,7 @@ def make_env(env_id: str, seed: int):
     def thunk():
         env = gym.make(env_id, apply_api_compatibility=True, render_mode="rgb_array")
         env = JoypadSpace(env, SIMPLE_MOVEMENT)
-        env = ResetWrapper(env)
+        env = EnvWrapper(env)
 
         env = GymV26CompatibilityV0(env=env)
 

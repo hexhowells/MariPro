@@ -9,6 +9,7 @@ import gymnasium
 
 from model import ActorCritic
 from utils import make_env
+from slate_integration import start_slate_client
 
 
 def train(
@@ -18,7 +19,7 @@ def train(
         rollout_len=5,
         gamma=0.99,
         lr=2.5e-4,
-        ent_coef=0.01,
+        ent_coef=0.5,
         vf_coef=0.5,
         max_grad_norm=0.5,
         seed=0,
@@ -38,6 +39,8 @@ def train(
     
     checkpoint_dir = "checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    start_slate_client(model, checkpoint_dir=checkpoint_dir)
 
     # begin training
     for update in range(0, total_updates + 1):
