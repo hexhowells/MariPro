@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 
 
@@ -22,5 +23,6 @@ class ActorCritic(nn.Module):
         z = self.features(x)
         logits = self.policy_head(z)
         value = self.value_head(z).squeeze(-1)
+        value = torch.clamp(value, -1.0, 1.0)
 
         return logits, value
