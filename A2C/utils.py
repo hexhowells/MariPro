@@ -37,8 +37,7 @@ def make_env(env_id: str, seed: int):
     return thunk
 
 
-def render_policy(model, env_id="CartPole-v1", max_steps=1000, seed=123):
-    # Use the same preprocessing as training
+def render_policy(model, env_id, max_steps=1000, seed=123):
     env = gym.make(env_id, frameskip=1, render_mode="human")
     env.reset(seed=seed)
     
