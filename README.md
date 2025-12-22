@@ -18,9 +18,9 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 - Prioritized Experience Replay
 - Dueling DQN
 - RainbowDQN
+- [A2C](https://arxiv.org/abs/1602.01783) 
 
 ### TODO
-- [A3C](https://arxiv.org/abs/1602.01783)
 - [Intrinsic Curiosity Module](https://arxiv.org/abs/1705.05363)
 - [Random Network Distillation](https://arxiv.org/abs/1810.12894)
 - [Proximal policy optimization](https://arxiv.org/abs/1707.06347)
