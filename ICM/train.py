@@ -65,7 +65,6 @@ def train(
             endpoint=get_local_ip(), 
             run_local=True, 
             checkpoints_dir='checkpoints',
-            frame_rate=0.01
             )
         runner.start_client()
     

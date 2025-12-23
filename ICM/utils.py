@@ -2,6 +2,7 @@ import gym
 from gymnasium.wrappers import TransformObservation
 from gymnasium import wrappers
 from gymnasium.spaces import Box
+import gymnasium as gymnasium_lib
 
 from nes_py.wrappers import JoypadSpace
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
@@ -13,6 +14,23 @@ import torchvision.transforms as T
 import numpy as np
 import socket
 
+
+class SkipFrame(gymnasium_lib.Wrapper):
+    def __init__(self, env, skip):
+        super().__init__(env)
+        self._skip = skip
+
+    def step(self, action):
+        total_reward = 0.0
+        
+        for _ in range(self._skip):
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            total_reward += reward
+            
+            if terminated or truncated:
+                break
+
+        return obs, total_reward, terminated, truncated, info
 
 
 class EnvWrapper:
@@ -45,6 +63,7 @@ def make_env(env_id: str, seed: int):
         env = EnvWrapper(env)
 
         env = GymV26CompatibilityV0(env=env)
+        env = SkipFrame(env, skip=4)
 
         transform = T.Compose([
             T.ToPILImage(),
