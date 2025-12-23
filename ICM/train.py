@@ -16,7 +16,7 @@ import threading
 
 def train(
         env_id="SuperMarioBros-v0",
-        total_updates=100_000,
+        total_updates=500_000,
         num_envs=8,
         rollout_len=5,
         gamma=0.99,
@@ -79,6 +79,8 @@ def train(
         val_buf = []
         icm_loss_buf = []
 
+        prev_score = np.zeros(envs.num_envs)
+
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
             logits, values = model(obs_t)
@@ -107,7 +109,13 @@ def train(
 
             # intrinsic reward is scaled forward prediction error
             intrinsic_reward = icm_eta * 0.5 * (phi_pred.detach() - phi_next.detach()).pow(2).sum(dim=1)
-            total_reward = torch.tensor(rewards, dtype=torch.float32, device=device) + intrinsic_reward
+
+            current_score = np.array(infos['score'])
+            score_reward = (current_score > prev_score).astype(np.float32)
+            death_penalty = np.where(dones, -1.0, 0.0).astype(np.float32)
+            custom_rewards = score_reward + death_penalty
+
+            total_reward = torch.tensor(custom_rewards, dtype=torch.float32, device=device) + intrinsic_reward
 
             obs_buf.append(obs_t)
             logp_buf.append(logp)
