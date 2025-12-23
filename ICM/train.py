@@ -6,7 +6,7 @@ import torch.optim as optim
 import ale_py
 import gymnasium as gym
 from model import ActorCritic, Encoder, ForwardModel, InverseModel
-from utils import make_env, render_policy
+from utils import make_env, get_local_ip
 
 from slate_agent import make_slate_env, SlateAgentICM
 from slate import SlateClient
@@ -62,7 +62,7 @@ def train(
         runner = SlateClient(
             env, 
             agent, 
-            endpoint='localhost', 
+            endpoint=get_local_ip(), 
             run_local=True, 
             checkpoints_dir='checkpoints'
             )
@@ -171,7 +171,7 @@ def train(
             )
         
         if update % 500 == 0:
-            checkpoint_path = f"checkpoints/model_{update}.pth"
+            checkpoint_path = f"checkpoints/model_{update:07}.pth"
             torch.save(model.state_dict(), checkpoint_path)
             print(f"Saved checkpoint: {checkpoint_path}")
 
