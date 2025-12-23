@@ -8,6 +8,11 @@ import gymnasium as gym
 from model import ActorCritic, Encoder, ForwardModel, InverseModel
 from utils import make_env, render_policy
 
+from slate_agent import make_slate_env, SlateAgentICM
+from slate import SlateClient
+
+import threading
+
 
 def train(
         env_id="ALE/Breakout-v5",
@@ -49,6 +54,22 @@ def train(
         + list(inverse_model.parameters()),
         lr=lr,
     )
+
+    # run slate
+    def run_client():
+        env = make_slate_env()
+        agent = SlateAgentICM(env, 'checkpoints')
+        runner = SlateClient(
+            env, 
+            agent, 
+            endpoint='localhost', 
+            run_local=True, 
+            checkpoints_dir='checkpoints'
+            )
+        runner.start_client()
+    
+    thread = threading.Thread(target=run_client, daemon=True)
+    thread.start()
 
     for update in range(1, total_updates + 1):
         obs_buf = []
@@ -150,8 +171,9 @@ def train(
             )
         
         if update % 500 == 0:
-            eval_return = render_policy(model, env_id=env_id)
-            print(f'{eval_return=}')
+            checkpoint_path = f"checkpoints/model_{update}.pth"
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Saved checkpoint: {checkpoint_path}")
 
     envs.close()
     return model
