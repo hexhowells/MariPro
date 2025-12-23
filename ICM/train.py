@@ -8,14 +8,14 @@ import gymnasium as gym
 from model import ActorCritic, Encoder, ForwardModel, InverseModel
 from utils import make_env, get_local_ip
 
-from slate_agent import make_slate_env, SlateAgentICM
+from slate_agent import  SlateAgentICM
 from slate import SlateClient
 
 import threading
 
 
 def train(
-        env_id="ALE/Breakout-v5",
+        env_id="SuperMarioBros-v0",
         total_updates=100_000,
         num_envs=8,
         rollout_len=5,
@@ -57,14 +57,15 @@ def train(
 
     # run slate
     def run_client():
-        env = make_slate_env()
+        env = make_env(env_id, 1)()
         agent = SlateAgentICM(env, 'checkpoints')
         runner = SlateClient(
             env, 
             agent, 
             endpoint=get_local_ip(), 
             run_local=True, 
-            checkpoints_dir='checkpoints'
+            checkpoints_dir='checkpoints',
+            frame_rate=0.01
             )
         runner.start_client()
     
