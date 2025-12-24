@@ -107,12 +107,7 @@ def train(
 
             intrinsic_reward = icm_eta * 0.5 * (phi_pred.detach() - phi_next.detach()).pow(2).sum(dim=1)
 
-            current_score = np.array(infos['score'])
-            score_reward = (current_score > prev_score).astype(np.float32)
-            death_penalty = np.where(dones, -1.0, 0.0).astype(np.float32)
-            custom_rewards = score_reward + death_penalty
-
-            total_reward = torch.tensor(custom_rewards, dtype=torch.float32, device=device) + intrinsic_reward
+            total_reward = intrinsic_reward
 
             obs_buf.append(obs_t)
             logp_buf.append(logp)
