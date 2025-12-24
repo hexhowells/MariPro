@@ -8,15 +8,15 @@ import gymnasium as gym
 from model import ActorCritic, Encoder, ForwardModel, InverseModel
 from utils import make_env, get_local_ip
 
-from slate_agent import make_slate_env, SlateAgentICM
+from slate_agent import  SlateAgentICM
 from slate import SlateClient
 
 import threading
 
 
 def train(
-        env_id="ALE/Breakout-v5",
-        total_updates=100_000,
+        env_id="SuperMarioBros-v0",
+        total_updates=500_000,
         num_envs=8,
         rollout_len=5,
         gamma=0.99,
@@ -57,14 +57,14 @@ def train(
 
     # run slate
     def run_client():
-        env = make_slate_env()
+        env = make_env(env_id, 1)()
         agent = SlateAgentICM(env, 'checkpoints')
         runner = SlateClient(
             env, 
             agent, 
             endpoint=get_local_ip(), 
             run_local=True, 
-            checkpoints_dir='checkpoints'
+            checkpoints_dir='checkpoints',
             )
         runner.start_client()
     
@@ -79,6 +79,8 @@ def train(
         val_buf = []
         icm_loss_buf = []
 
+        prev_score = np.zeros(envs.num_envs)
+
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
             logits, values = model(obs_t)
@@ -89,25 +91,23 @@ def train(
             next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated)
 
-            # ICM: encode states
+            # compute reward with ICM
             next_obs_t = torch.tensor(next_obs, dtype=torch.float32, device=device)
             phi_s = encoder_model(obs_t)
             phi_next = encoder_model(next_obs_t)
 
-            # inverse model predicts action
             inv_logits = inverse_model(torch.cat([phi_s, phi_next], dim=1))
             inv_loss = inverse_loss(inv_logits, actions)
 
-            # forward model predicts next feature given action one-hot
             actions_one_hot = F.one_hot(actions, act_dim).float()
             phi_pred = forward_model(torch.cat([phi_s, actions_one_hot], dim=1))
             fwd_loss = forward_loss(phi_pred, phi_next.detach())
 
             icm_loss = ((1 - icm_beta) * inv_loss) + (icm_beta * fwd_loss)
 
-            # intrinsic reward is scaled forward prediction error
             intrinsic_reward = icm_eta * 0.5 * (phi_pred.detach() - phi_next.detach()).pow(2).sum(dim=1)
-            total_reward = torch.tensor(rewards, dtype=torch.float32, device=device) + intrinsic_reward
+
+            total_reward = intrinsic_reward
 
             obs_buf.append(obs_t)
             logp_buf.append(logp)

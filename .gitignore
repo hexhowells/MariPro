@@ -9,3 +9,4 @@ sequences.txt
 models/
 *.pth
 mario/
+.venv/
