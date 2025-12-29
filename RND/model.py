@@ -26,52 +26,53 @@ class ActorCritic(nn.Module):
         return logits, value
     
 
-class Encoder(nn.Module):
-    def __init__(self, in_channels=4, actions=7):
+class TargetNetwork(nn.Module):
+    def __init__(self, in_channels=4):
         super().__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(in_channels, 32, kernel_size=(3, 3), stride=2, padding=1),
-            nn.ELU(),
-            nn.Conv2d(32, 32, kernel_size=(3, 3), stride=2, padding=1),
-            nn.ELU(),
-            nn.Conv2d(32, 32, kernel_size=(3, 3), stride=2, padding=1),
-            nn.ELU(),
-            nn.Conv2d(32, 32, kernel_size=(3, 3), stride=2, padding=1),
-            nn.ELU(),
-            nn.Flatten(), # 1152
+            nn.Conv2d(in_channels, 32, kernel_size=(8, 8), stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=(4, 4), stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=1),
+            nn.ReLU(),
+            nn.Flatten(),
             )
-    
-
-    def forward(self, x):
-        return self.features(x)
-
-
-class ForwardModel(nn.Module):
-    def __init__(self, feature_dim=1152, actions=7):
-        super().__init__()
-        self.decoder = nn.Sequential(
-            nn.Linear(actions+feature_dim, 256),
-            nn.ReLU(inplace=True),
-            nn.Linear(256, feature_dim),
-            nn.ReLU(inplace=True)
+        self.fc = nn.Sequential(
+            nn.Linear(512, 512)
         )
     
 
     def forward(self, x):
-        return self.decoder(x)
+        x = self.features(x)
+        x = self.fc(x)
+
+        return x
 
 
-class InverseModel(nn.Module):
-    def __init__(self, feature_dim=1152, actions=7):
+class PredictionNetwork(nn.Module):
+    def __init__(self, in_channels=4):
         super().__init__()
-        self.inverse = nn.Sequential(
-            nn.Linear(feature_dim*2, 256),
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels, 32, kernel_size=(8, 8), stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=(4, 4), stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            )
+        self.fc = nn.Sequential(
+            nn.Linear(512, 512),
             nn.ReLU(inplace=True),
-            nn.Linear(256, actions),
-            nn.ReLU(inplace=True)
+            nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            nn.Linear(512, 512)
         )
     
 
     def forward(self, x):
-        return self.inverse(x)
+        x = self.features(x)
+        x = self.fc(x)
 
+        return x
