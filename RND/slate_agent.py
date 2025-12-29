@@ -7,7 +7,7 @@ from slate import Agent
 from model import ActorCritic
 
 
-class SlateAgentICM(Agent):
+class SlateAgentRND(Agent):
     def __init__(self, env, checkpoint_dir):
         self.env = env
         self.checkpoint_dir = checkpoint_dir

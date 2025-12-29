@@ -5,10 +5,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 import ale_py
 import gymnasium as gym
-from model import ActorCritic, Encoder, ForwardModel, InverseModel
+from model import ActorCritic, TargetNetwork, PredictionNetwork
 from utils import make_env, get_local_ip
 
-from slate_agent import  SlateAgentICM
+from slate_agent import SlateAgentRND
 from slate import SlateClient
 
 import threading
@@ -24,9 +24,8 @@ def train(
         ent_coef=0.01,
         vf_coef=0.5,
         max_grad_norm=0.5,
-        icm_beta=0.2,          # inverse vs forward weighting
-        icm_eta=0.01,          # scale intrinsic reward
-        icm_coef=1.0,          # weight icm loss in total loss
+        rnd_eta=0.01,          # scale intrinsic reward
+        rnd_coef=1.0,          # weight rnd loss in total loss
         seed=0,
     ):
     torch.manual_seed(seed)
@@ -40,25 +39,24 @@ def train(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ActorCritic(actions=act_dim).to(device)
-    encoder_model = Encoder(actions=act_dim).to(device)
-    forward_model = ForwardModel(actions=act_dim).to(device)
-    inverse_model = InverseModel(actions=act_dim).to(device)
+    target_model = TargetNetwork().to(device)
+    target_model.eval()
+    prediction_model = PredictionNetwork().to(device)
 
-    inverse_loss = nn.CrossEntropyLoss()
-    forward_loss = nn.MSELoss()
+    for param in target_model.parameters():
+        param.requires_grad = False
+
+    rnd_loss_fn = nn.MSELoss(reduction='none')
 
     optimizer = optim.Adam(
-        list(model.parameters())
-        + list(encoder_model.parameters())
-        + list(forward_model.parameters())
-        + list(inverse_model.parameters()),
+        list(model.parameters()) + list(prediction_model.parameters()),
         lr=lr,
     )
 
     # run slate
     def run_client():
         env = make_env(env_id, 1)()
-        agent = SlateAgentICM(env, 'checkpoints')
+        agent = SlateAgentRND(env, 'checkpoints')
         runner = SlateClient(
             env, 
             agent, 
@@ -77,9 +75,7 @@ def train(
         rew_buf = []
         done_buf = []
         val_buf = []
-        icm_loss_buf = []
-
-        prev_score = np.zeros(envs.num_envs)
+        rnd_loss_buf = []
 
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
@@ -91,30 +87,25 @@ def train(
             next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated)
 
-            # compute reward with ICM
+            # Compute RND intrinsic reward
             next_obs_t = torch.tensor(next_obs, dtype=torch.float32, device=device)
-            phi_s = encoder_model(obs_t)
-            phi_next = encoder_model(next_obs_t)
-
-            inv_logits = inverse_model(torch.cat([phi_s, phi_next], dim=1))
-            inv_loss = inverse_loss(inv_logits, actions)
-
-            actions_one_hot = F.one_hot(actions, act_dim).float()
-            phi_pred = forward_model(torch.cat([phi_s, actions_one_hot], dim=1))
-            fwd_loss = forward_loss(phi_pred, phi_next.detach())
-
-            icm_loss = ((1 - icm_beta) * inv_loss) + (icm_beta * fwd_loss)
-
-            intrinsic_reward = icm_eta * 0.5 * (phi_pred.detach() - phi_next.detach()).pow(2).sum(dim=1)
-
-            total_reward = intrinsic_reward
+            
+            with torch.no_grad():
+                target_features = target_model(next_obs_t)
+            
+            pred_features = prediction_model(next_obs_t)
+            rnd_loss = rnd_loss_fn(pred_features, target_features).mean(dim=1)
+            intrinsic_reward = rnd_eta * rnd_loss.detach()
+            
+            extrinsic_reward = torch.tensor(rewards, dtype=torch.float32, device=device)
+            total_reward = extrinsic_reward + intrinsic_reward
 
             obs_buf.append(obs_t)
             logp_buf.append(logp)
             rew_buf.append(total_reward)
             done_buf.append(torch.tensor(dones, dtype=torch.float32, device=device))
             val_buf.append(values)
-            icm_loss_buf.append(icm_loss)
+            rnd_loss_buf.append(rnd_loss.mean())
 
             obs = next_obs
 
@@ -138,7 +129,7 @@ def train(
         values = torch.stack(val_buf).reshape(T * N) 
         logps = torch.stack(logp_buf).reshape(T * N) 
         obs_stack = torch.stack(obs_buf).reshape(T * N, *obs_dim)
-        icm_loss_total = torch.stack(icm_loss_buf).mean()
+        rnd_loss_total = torch.stack(rnd_loss_buf).mean()
 
         advantages = returns - values
 
@@ -150,11 +141,14 @@ def train(
         dist_flat = torch.distributions.Categorical(logits=logits_flat)
         entropy_loss = -dist_flat.entropy().mean()
 
-        loss = policy_loss + vf_coef * value_loss + (ent_coef * entropy_loss) + icm_coef * icm_loss_total
+        loss = policy_loss + vf_coef * value_loss + (ent_coef * entropy_loss) + rnd_coef * rnd_loss_total
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+        nn.utils.clip_grad_norm_(
+            list(model.parameters()) + list(prediction_model.parameters()), 
+            max_grad_norm
+        )
         optimizer.step()
 
         if update % 50 == 0:
@@ -166,7 +160,7 @@ def train(
                 f"pi={policy_loss.item():.3f} "
                 f"vf={value_loss.item():.3f} "
                 f"ent={(-entropy_loss).item():.3f} "
-                f"icm={icm_loss_total.item():.3f} "
+                f"rnd={rnd_loss_total.item():.3f} "
                 f"Vmean={v_mean:.3f}"
             )
         
