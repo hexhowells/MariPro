@@ -39,14 +39,12 @@ class TargetNetwork(nn.Module):
             nn.Flatten(),
             )
         self.fc = nn.Sequential(
-            nn.Linear(512, 512)
+            nn.Linear(3136, 512)
         )
     
-
     def forward(self, x):
         x = self.features(x)
         x = self.fc(x)
-
         return x
 
 
@@ -63,16 +61,14 @@ class PredictionNetwork(nn.Module):
             nn.Flatten(),
             )
         self.fc = nn.Sequential(
-            nn.Linear(512, 512),
+            nn.Linear(3136, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, 512)
         )
     
-
     def forward(self, x):
         x = self.features(x)
         x = self.fc(x)
-
         return x
