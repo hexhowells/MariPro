@@ -24,7 +24,7 @@ def train(
         ent_coef=0.01,
         vf_coef=0.5,
         max_grad_norm=0.5,
-        rnd_eta=0.01,          # scale intrinsic reward
+        rnd_eta=1.0,          # scale intrinsic reward
         rnd_coef=1.0,          # weight rnd loss in total loss
         seed=0,
     ):
