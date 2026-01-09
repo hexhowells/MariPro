@@ -111,7 +111,7 @@ class RunningMeanStd:
 
 
     def update(self, x):
-        x_np = np.asarray(x)
+        x_np = x.detach().cpu().numpy()
         
         x_flat = x_np.flatten()
         batch_mean = float(np.mean(x_flat))
@@ -133,7 +133,7 @@ class RunningMeanStd:
 
 
     def normalize(self, x):
-        x_np = np.asarray(x)
+        x_np = x.detach().cpu().numpy()
         
         std = np.sqrt(self.var + 1e-8)
         normalized = (x_np - self.mean) / std
