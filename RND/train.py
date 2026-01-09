@@ -18,7 +18,7 @@ def train(
         env_id="SuperMarioBros-v0",
         total_updates=500_000,
         num_envs=8,
-        rollout_len=5,
+        rollout_len=128,
         gamma=0.99,
         lr=2.5e-4,
         ent_coef=0.01,
