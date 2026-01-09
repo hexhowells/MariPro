@@ -6,7 +6,7 @@ import torch.optim as optim
 import ale_py
 import gymnasium as gym
 from model import ActorCritic, TargetNetwork, PredictionNetwork
-from utils import make_env, get_local_ip
+from utils import make_env, get_local_ip, RunningMeanStd
 
 from slate_agent import SlateAgentRND
 from slate import SlateClient
@@ -47,6 +47,8 @@ def train(
         param.requires_grad = False
 
     rnd_loss_fn = nn.MSELoss(reduction='none')
+    
+    int_reward_rms = RunningMeanStd()
 
     optimizer = optim.Adam(
         list(model.parameters()) + list(prediction_model.parameters()),
@@ -76,6 +78,7 @@ def train(
         done_buf = []
         val_buf = []
         rnd_loss_buf = []
+        intrinsic_rewards = []
 
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
@@ -95,7 +98,17 @@ def train(
             
             pred_features = prediction_model(next_obs_t)
             rnd_loss = rnd_loss_fn(pred_features, target_features).mean(dim=1)
-            intrinsic_reward = rnd_eta * rnd_loss.detach()
+            
+            raw_intrinsic_reward = rnd_loss.detach()
+            
+            normalized_int_reward_np = int_reward_rms.normalize(raw_intrinsic_reward)
+            normalized_int_reward = torch.tensor(
+                normalized_int_reward_np,
+                dtype=torch.float32,
+                device=device
+            )
+            intrinsic_reward = rnd_eta * normalized_int_reward
+            intrinsic_rewards.append(intrinsic_reward)
             
             extrinsic_reward = torch.tensor(rewards, dtype=torch.float32, device=device)
             total_reward = extrinsic_reward + intrinsic_reward
@@ -108,6 +121,9 @@ def train(
             rnd_loss_buf.append(rnd_loss.mean())
 
             obs = next_obs
+        
+        all_raw_int_rewards = torch.cat(intrinsic_rewards)
+        int_reward_rms.update(all_raw_int_rewards)
 
         # compute value of last state
         with torch.no_grad():

@@ -10,6 +10,7 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from shimmy.openai_gym_compatibility import GymV26CompatibilityV0
 
 import torchvision.transforms as T
+import torch
 
 import numpy as np
 import socket
@@ -99,3 +100,42 @@ def get_local_ip():
     s.close()
 
     return ip
+
+
+class RunningMeanStd:
+    """Tracks running mean and standard deviation for normalization."""
+    def __init__(self, epsilon=1e-8):
+        self.mean = 0.0
+        self.var = 1.0
+        self.count = epsilon
+
+
+    def update(self, x):
+        x_np = np.asarray(x)
+        
+        x_flat = x_np.flatten()
+        batch_mean = float(np.mean(x_flat))
+        batch_var = float(np.var(x_flat))
+        batch_count = len(x_flat)
+
+        delta = batch_mean - self.mean
+        total_count = self.count + batch_count
+
+        new_mean = self.mean + delta * batch_count / total_count
+        m_a = self.var * self.count
+        m_b = batch_var * batch_count
+        M2 = m_a + m_b + np.square(delta) * self.count * batch_count / total_count
+        new_var = M2 / total_count
+
+        self.mean = new_mean
+        self.var = new_var
+        self.count = total_count
+
+
+    def normalize(self, x):
+        x_np = np.asarray(x)
+        
+        std = np.sqrt(self.var + 1e-8)
+        normalized = (x_np - self.mean) / std
+
+        return normalized
