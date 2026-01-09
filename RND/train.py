@@ -40,11 +40,7 @@ def train(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ActorCritic(actions=act_dim).to(device)
     target_model = TargetNetwork().to(device)
-    target_model.eval()
     prediction_model = PredictionNetwork().to(device)
-
-    for param in target_model.parameters():
-        param.requires_grad = False
 
     rnd_loss_fn = nn.MSELoss(reduction='none')
     
