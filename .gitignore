@@ -10,3 +10,4 @@ models/
 *.pth
 mario/
 .venv/
+venv/
