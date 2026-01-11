@@ -12,12 +12,12 @@ Implements various genetic algorithms and reinforcement learning algorithms to p
 - Heuristic Based
 - Evolutionary Learning
 - Neuroevolution
-- NEAT
-- DQN
-- DDQN
+- [NEAT](https://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf)
+- [DQN](https://www.nature.com/articles/nature14236)
+- [DDQN](https://www.nature.com/articles/nature14236)
 - Prioritized Experience Replay
-- Dueling DQN
-- RainbowDQN
+- [Dueling DQN](https://arxiv.org/abs/1511.06581)
+- [RainbowDQN](https://arxiv.org/abs/1710.02298)
 - [A2C](https://arxiv.org/abs/1602.01783)
 - [Intrinsic Curiosity Module](https://arxiv.org/abs/1705.05363)
 - [Random Network Distillation](https://arxiv.org/abs/1810.12894)
