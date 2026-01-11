@@ -86,6 +86,8 @@ def train(
             next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated)
 
+            rewards = np.clip(infos['score'], -1, 1)
+
             # Compute RND intrinsic reward
             next_obs_t = torch.tensor(next_obs, dtype=torch.float32, device=device)
             
@@ -142,7 +144,8 @@ def train(
         logps = torch.stack(logp_buf).reshape(T * N) 
         obs_stack = torch.stack(obs_buf).reshape(T * N, *obs_dim)
         rnd_loss_total = torch.stack(rnd_loss_buf).mean()
-
+        returns = torch.clamp(returns, -5, 5)
+        
         advantages = returns - values
 
         policy_loss = -(logps * advantages.detach()).mean()
@@ -176,7 +179,7 @@ def train(
                 f"Vmean={v_mean:.3f}"
             )
         
-        if update % 500 == 0:
+        if update % 200 == 0:
             checkpoint_path = f"checkpoints/model_{update:07}.pth"
             torch.save(model.state_dict(), checkpoint_path)
             print(f"Saved checkpoint: {checkpoint_path}")
