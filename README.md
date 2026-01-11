@@ -2,9 +2,9 @@
   <img src="https://github.com/hexhowells/MariPro/blob/main/banner.png" width=80%>
 </p>
 
-Learning to play Super Mario Bros with AI
+Learning to play Super Mario Bros with AI. 
 
-Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) for emulating the game.
+Implements various genetic algorithms and reinforcement learning algorithms to play the game Super Mario Bros using the environment [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros). Platform to mostly learn about different reinforcement learning algorithms using a standardised environment to compare the solutions against each other. Will also train models on Breakout for quicker development or for algorithms that do not work well on the SMB environment.
 
 ---
 
@@ -33,6 +33,8 @@ Uses [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros) fo
 ---
 
 ## Notable RAM Addresses
+Usefull addresses in the game's RAM for the heuristic method. We use raw pixels and the environment info for all other solutions.
+
 | Addr | Description |
 | ---- | ----------- |
 | 0x071A | Current Screen |
