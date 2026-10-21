@@ -12,7 +12,7 @@ def train(
         env_id="ALE/Breakout-v5",
         total_updates=100_000,
         num_envs=8,
-        rollout_len=5,
+        rollout_len=128,
         gamma=0.99,
         lr=2.5e-4,
         ent_coef=0.01,
@@ -90,7 +90,7 @@ def train(
         minibatch_size = batch_size // num_minibatches
         epsilon = 0.2
 
-        for epoch in range(4):
+        for _ in range(4):
             b_inds = torch.randperm(batch_size, device=device)
             
             for start in range(0, batch_size, minibatch_size):
@@ -103,7 +103,10 @@ def train(
                 new_logp = new_dist.log_prob(actions_flat[md_inds])
                 ratio = torch.exp(new_logp - logps[md_inds])
 
-                policy_loss = -torch.min(ratio*advantages[md_inds], torch.clip(ratio, 1-epsilon, 1+epsilon)*advantages[md_inds]).mean()
+                adv_slice = advantages[md_inds]
+                adv_slice = (adv_slice - adv_slice.mean()) / (adv_slice.std() + 1e-8)
+
+                policy_loss = -torch.min(ratio * adv_slice, torch.clip(ratio, 1-epsilon, 1+epsilon) * adv_slice).mean()
                 value_loss = 0.5 * (returns[md_inds] - new_values).pow(2).mean()
                 entropy_loss = -new_dist.entropy().mean()
                 
