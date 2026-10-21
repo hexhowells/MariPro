@@ -39,14 +39,16 @@ def train(
         rew_buf = []
         done_buf = []
         val_buf = []
+        act_buf = []
 
         for t in range(rollout_len):
             obs_t = torch.tensor(obs, dtype=torch.float32, device=device)
-            logits, values = model(obs_t)
-
-            dist = torch.distributions.Categorical(logits=logits)
-            actions = dist.sample()
-            logp = dist.log_prob(actions)
+            with torch.no_grad():
+                logits, values = model(obs_t)
+                dist = torch.distributions.Categorical(logits=logits)
+                actions = dist.sample()
+                logp = dist.log_prob(actions)
+            
             next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated)
 
@@ -55,6 +57,7 @@ def train(
             rew_buf.append(torch.tensor(rewards, dtype=torch.float32, device=device))
             done_buf.append(torch.tensor(dones, dtype=torch.float32, device=device))
             val_buf.append(values)
+            act_buf.append(actions)
 
             obs = next_obs
 
@@ -78,39 +81,54 @@ def train(
         values = torch.stack(val_buf).reshape(T * N) 
         logps = torch.stack(logp_buf).reshape(T * N) 
         obs_stack = torch.stack(obs_buf).reshape(T * N, *obs_dim)
+        actions_flat = torch.stack(act_buf).reshape(T * N)
 
         advantages = returns - values
 
-        policy_loss = -(logps * advantages.detach()).mean()
+        batch_size = T * N
+        num_minibatches = 4
+        minibatch_size = batch_size // num_minibatches
+        epsilon = 0.2
 
-        value_loss = 0.5 * (returns - values).pow(2).mean()
+        for epoch in range(4):
+            b_inds = torch.randperm(batch_size, device=device)
+            
+            for start in range(0, batch_size, minibatch_size):
+                end = start + minibatch_size
+                md_inds = b_inds[start:end]
+                obs_slice = obs_stack[md_inds]
 
-        logits_flat, _ = model(obs_stack)
-        dist_flat = torch.distributions.Categorical(logits=logits_flat)
-        entropy_loss = -dist_flat.entropy().mean()
+                new_logits, new_values = model(obs_slice)
+                new_dist = torch.distributions.Categorical(logits=new_logits)
+                new_logp = new_dist.log_prob(actions_flat[md_inds])
+                ratio = torch.exp(new_logp - logps[md_inds])
 
-        loss = policy_loss + vf_coef * value_loss + (ent_coef * entropy_loss)
+                policy_loss = -torch.min(ratio*advantages[md_inds], torch.clip(ratio, 1-epsilon, 1+epsilon)*advantages[md_inds]).mean()
+                value_loss = 0.5 * (returns[md_inds] - new_values).pow(2).mean()
+                entropy_loss = -new_dist.entropy().mean()
+                
+                loss = policy_loss + vf_coef * value_loss + (ent_coef * entropy_loss)
 
-        optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
-        optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
+                loss.backward()
+                nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+                optimizer.step()
 
-        if update % 50 == 0:
-            with torch.no_grad():
-                v_mean = last_values.mean().item()
-            print(
-                f"update={update:4d} "
-                f"loss={loss.item():.3f} "
-                f"pi={policy_loss.item():.3f} "
-                f"vf={value_loss.item():.3f} "
-                f"ent={(-entropy_loss).item():.3f} "
-                f"Vmean={v_mean:.3f}"
-            )
-        
-        if update % 500 == 0:
-            eval_return = render_policy(model, env_id=env_id)
-            print(f'{eval_return=}')
+                if update % 50 == 0:
+                    with torch.no_grad():
+                        v_mean = last_values.mean().item()
+                    print(
+                        f"update={update:4d} "
+                        f"loss={loss.item():.3f} "
+                        f"pi={policy_loss.item():.3f} "
+                        f"vf={value_loss.item():.3f} "
+                        f"ent={(-entropy_loss).item():.3f} "
+                        f"Vmean={v_mean:.3f}"
+                    )
+                
+                if update % 500 == 0:
+                    eval_return = render_policy(model, env_id=env_id)
+                    print(f'{eval_return=}')
 
     envs.close()
     return model
