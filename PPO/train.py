@@ -7,11 +7,13 @@ import gymnasium as gym
 from model import ActorCritic
 from utils import make_env, render_policy
 
+torch.set_float32_matmul_precision('high')
+
 
 def train(
         env_id="ALE/Breakout-v5",
         total_updates=100_000,
-        num_envs=8,
+        num_envs=32,
         rollout_len=128,
         gamma=0.99,
         lr=2.5e-4,
@@ -23,7 +25,7 @@ def train(
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    envs = gym.vector.SyncVectorEnv([make_env(env_id, seed + i) for i in range(num_envs)])
+    envs = gym.vector.AsyncVectorEnv([make_env(env_id, seed + i) for i in range(num_envs)])
     obs, _ = envs.reset()
     
     obs_dim = envs.single_observation_space.shape
@@ -31,6 +33,7 @@ def train(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ActorCritic(actions=act_dim).to(device)
+    model = torch.compile(model) 
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     for update in range(1, total_updates + 1):
@@ -90,7 +93,7 @@ def train(
         minibatch_size = batch_size // num_minibatches
         epsilon = 0.2
 
-        for _ in range(4):
+        for ppo_batch in range(4):
             b_inds = torch.randperm(batch_size, device=device)
             
             for start in range(0, batch_size, minibatch_size):
@@ -117,7 +120,7 @@ def train(
                 nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
                 optimizer.step()
 
-                if update % 50 == 0:
+                if update % 50 == 0 and start == 0 and ppo_batch == 0:
                     with torch.no_grad():
                         v_mean = last_values.mean().item()
                     print(
@@ -129,9 +132,9 @@ def train(
                         f"Vmean={v_mean:.3f}"
                     )
                 
-                if update % 500 == 0:
-                    eval_return = render_policy(model, env_id=env_id)
-                    print(f'{eval_return=}')
+        if update % 500 == 0:
+            eval_return = render_policy(model, env_id=env_id)
+            print(f'{eval_return=}')
 
     envs.close()
     return model
