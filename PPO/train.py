@@ -6,10 +6,14 @@ import ale_py
 import gymnasium as gym
 from model import ActorCritic
 from utils import make_env, render_policy, get_local_ip
+import os
 
-from slate_agent import SlateAgentPPO
-from slate import SlateClient
-import threading
+RUN_SLATE = bool(os.getenv('SLATE', False))
+
+if RUN_SLATE:
+    from slate_agent import SlateAgentPPO
+    from slate import SlateClient
+    import threading
 
 torch.set_float32_matmul_precision('high')
 
@@ -42,20 +46,22 @@ def train(
 
     best_eval_score = 0
 
-    def run_client():
-        env = make_env(env_id, 1)()
-        agent = SlateAgentPPO(env, 'checkpoints')
-        runner = SlateClient(
-            env, 
-            agent, 
-            endpoint=get_local_ip(), 
-            run_local=True, 
-            checkpoints_dir='checkpoints',
-            )
-        runner.start_client()
-    
-    thread = threading.Thread(target=run_client, daemon=True)
-    thread.start()
+    if RUN_SLATE:
+        print("Running Slate client")
+        def run_client():
+            env = make_env(env_id, 1)()
+            agent = SlateAgentPPO(env, 'checkpoints')
+            runner = SlateClient(
+                env, 
+                agent, 
+                endpoint=get_local_ip(), 
+                run_local=True, 
+                checkpoints_dir='checkpoints',
+                )
+            runner.start_client()
+        
+        thread = threading.Thread(target=run_client, daemon=True)
+        thread.start()
 
     for update in range(1, total_updates + 1):
         obs_buf = []
