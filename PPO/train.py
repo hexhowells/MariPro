@@ -160,7 +160,7 @@ def train(
                     )
                 
         if update % 500 == 0:
-            eval_return = render_policy(model, env_id=env_id)
+            eval_return = render_policy(model, max_steps=5000, env_id=env_id)
             print(f'{eval_return=}')
             if eval_return >= best_eval_score:
                 best_eval_score = eval_return
