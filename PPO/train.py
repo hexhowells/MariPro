@@ -5,7 +5,15 @@ import torch.optim as optim
 import ale_py
 import gymnasium as gym
 from model import ActorCritic
-from utils import make_env, render_policy
+from utils import make_env, render_policy, get_local_ip
+import os
+
+RUN_SLATE = bool(os.getenv('SLATE', False))
+
+if RUN_SLATE:
+    from slate_agent import SlateAgentPPO
+    from slate import SlateClient
+    import threading
 
 torch.set_float32_matmul_precision('high')
 
@@ -35,6 +43,25 @@ def train(
     model = ActorCritic(actions=act_dim).to(device)
     model = torch.compile(model) 
     optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    best_eval_score = 0
+
+    if RUN_SLATE:
+        print("Running Slate client")
+        def run_client():
+            env = make_env(env_id, 1)()
+            agent = SlateAgentPPO(env, 'checkpoints')
+            runner = SlateClient(
+                env, 
+                agent, 
+                endpoint=get_local_ip(), 
+                run_local=True, 
+                checkpoints_dir='checkpoints',
+                )
+            runner.start_client()
+        
+        thread = threading.Thread(target=run_client, daemon=True)
+        thread.start()
 
     for update in range(1, total_updates + 1):
         obs_buf = []
@@ -133,8 +160,12 @@ def train(
                     )
                 
         if update % 500 == 0:
-            eval_return = render_policy(model, env_id=env_id)
+            eval_return = render_policy(model, max_steps=5000, env_id=env_id)
             print(f'{eval_return=}')
+            if eval_return >= best_eval_score:
+                best_eval_score = eval_return
+                print("Current best eval score, saving model...")
+                torch.save(model._orig_mod.state_dict(), f'checkpoints/model_{update}.pth')
 
     envs.close()
     return model

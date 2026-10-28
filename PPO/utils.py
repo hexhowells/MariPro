@@ -4,11 +4,12 @@ from gymnasium import wrappers
 from gymnasium.spaces import Box
 import torch
 import numpy as np
+import socket
 
 
 def make_env(env_id: str, seed: int):
     def thunk():
-        env = gym.make(env_id, frameskip=1)
+        env = gym.make(env_id, frameskip=1, render_mode="rgb_array")
         env.reset(seed=seed)
 
         env = AtariPreprocessing(
@@ -83,3 +84,12 @@ def render_policy(model, env_id, max_steps=1000, seed=123):
     env.close()
 
     return total_reward
+
+
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 1))
+    ip = s.getsockname()[0]
+    s.close()
+
+    return ip
